@@ -45,13 +45,6 @@ class i2cPi:
             self.pinsIn[i]['state'] = GPIO.input(self.pinsIn[i]['pin'])
             logging.info('%s initial state is %s' %(self.pinsIn[i]['name'], str(self.pinsIn[i]['state'])))
 
-        for i in self.pinsIn_FanCon:
-            GPIO.setup(self.pinsIn[i]['pin'], GPIO.IN) #set GPIO as INPUT
-            logging.info('%s pin %s configured as INPUT' %(self.pinsIn[i]['name'], str(self.pinsIn[i]['pin'])))
-
-            self.pinsIn[i]['state'] = GPIO.input(self.pinsIn[i]['pin'])
-            logging.info('%s initial state is %s' %(self.pinsIn[i]['name'], str(self.pinsIn[i]['state'])))
-
     def updateState(self, channel, value):
         for i in self.pinsIn:
             if channel == self.pinsIn[i]['pin']:
