@@ -3,11 +3,14 @@ GPIO.setmode(GPIO.BCM)
 
 from smbus2 import SMBus
 import logging
+import time
 
 class i2cPi:
     def __init__(self):
+
+        logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.DEBUG, datefmt="%H:%M:%S")
+        
         self.pinsIn = {
-            'displayFlag' : {'name' : 'displayFlag', 'pinType':'interface','state':0,'priorState':0, 'pin': 22},
             'displayFlag' : {'name' : 'displayFlag', 'pinType':'interface','state':0,'priorState':0, 'pin': 22},
         }
 
@@ -44,14 +47,12 @@ class i2cPi:
             self.pinsIn[i]['state'] = GPIO.input(self.pinsIn[i]['pin'])
             logging.info('%s initial state is %s' %(self.pinsIn[i]['name'], str(self.pinsIn[i]['state'])))
 
-            #configure event detections for pinType levelSensor & interface
-            if self.pinsIn[i]['pinType'] == 'displayFlag':
-                GPIO.add_event_detect(self.pinsIn[i]['pin'], GPIO.BOTH, callback=self.displayFlag, bouncetime=500) 
-                logging.info('%s set as displayFlag callback' %(str(self.pinsIn[i]['name'])))
-            elif self.pinsIn[i]['pinType'] == 'interface':
-                GPIO.add_event_detect(self.pinsIn[i]['pin'], GPIO.RISING, callback=self.buttonPress, bouncetime=500) 
-                logging.info('%s set as button callback' %(str(self.pinsIn[i]['name'])))
+        for i in self.pinsIn_FanCon:
+            GPIO.setup(self.pinsIn[i]['pin'], GPIO.IN) #set GPIO as INPUT
+            logging.info('%s pin %s configured as INPUT' %(self.pinsIn[i]['name'], str(self.pinsIn[i]['pin'])))
 
+            self.pinsIn[i]['state'] = GPIO.input(self.pinsIn[i]['pin'])
+            logging.info('%s initial state is %s' %(self.pinsIn[i]['name'], str(self.pinsIn[i]['state'])))
 
     def updateState(self, channel, value):
         for i in self.pinsIn:
