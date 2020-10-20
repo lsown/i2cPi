@@ -60,11 +60,11 @@ class i2cPi:
                 print('%s pin triggered, %s configured state to %s' %(str(channel), self.pinsIn[i]['name'], self.pinsIn[i]['state'])) # debug
 
     def displayFlag(self, channel):
-    if GPIO.input(channel) == 1:
-        self.updateState(channel, 1)
-        #self.motorControl(name='drv0', speed=0, direction = 'brake')
-    if GPIO.input(channel) == 0:
-        self.updateState(channel, 0)
+        if GPIO.input(channel) == 1:
+            self.updateState(channel, 1)
+            #self.motorControl(name='drv0', speed=0, direction = 'brake')
+        if GPIO.input(channel) == 0:
+            self.updateState(channel, 0)
 
     def tunnel(self):
         try:
