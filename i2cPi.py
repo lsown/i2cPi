@@ -1,6 +1,9 @@
 from RPi import GPIO as GPIO
 GPIO.setmode(GPIO.BCM)
 
+from smbus2 import SMBus
+import logging
+
 class i2cPi:
     def __init__(self):
         self.pinsIn = {
@@ -26,6 +29,8 @@ class i2cPi:
             'maxFlag' : {'name' : 'maxFlag', 'pinType':'interface','state':0,'priorState':0, 'pin': 25},
         }
 
+        self.bus = SMBus(1)
+
     def piSetup(self): #Sets up GPIO pins, can also add to GPIO.in <pull_up_down=GPIO.PUD_UP>
 
         for i in self.pinsOut:
@@ -47,6 +52,7 @@ class i2cPi:
                 GPIO.add_event_detect(self.pinsIn[i]['pin'], GPIO.RISING, callback=self.buttonPress, bouncetime=500) 
                 logging.info('%s set as button callback' %(str(self.pinsIn[i]['name'])))
 
+
     def updateState(self, channel, value):
     for i in self.pinsIn:
         if channel == self.pinsIn[i]['pin']:
@@ -60,5 +66,26 @@ class i2cPi:
     if GPIO.input(channel) == 0:
         self.updateState(channel, 0)
 
+    def tunnel(self):
+        try:
+            self.bus.read_byte(0x77, 0x00)
+            self.bus.write_byte(0x77, 0x00, 0x01)
+            self.bus.read_byte(0x77, 0x00)
+            try:
+                self.bus.read_byte(0x41, 0x03)  #read PCA9536 configuration register, expect 0x0F - configured inputs
+                self.bus.write_byte(0x41, 0x03, 0x0F) #Set register 3 to 0b0, configures all to output
+                self.bus.read_byte(0x41, 0x03)    #Check that its configured as output
+                self.bus.read_byte(0x41, 0x01)  #check output register, default is 1.
+                self.bus.write_byte(0x41, 0x01, 0x00)   #write output register to 0.
+                self.bus.read_byte(0x41, 0x01)  #confirm that output register is 0.
+            except OSError:
+                logging.info('Error 121 - Remote I/O Error on address 41 - PCA9536')
+            try:
+                self.bus.read_byte(0x70, 0x00)  #check that mux has been reconfigured to address 70.
+            except OSError:
+                logging.info('Error 121 - Remote I/O Error on address 70 - TCA9548')
+
+        except OSError:
+            logging.info('Error 121 - Remote I/O Error on address 77 - TCA9548')
 
         
