@@ -9,9 +9,12 @@ class i2cPi:
     def __init__(self):
 
         logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.DEBUG, datefmt="%H:%M:%S")
-        
+
         self.pinsIn = {
             'displayFlag' : {'name' : 'displayFlag', 'pinType':'interface','state':0,'priorState':0, 'pin': 22},
+            'adtFlag' : {'name' : 'adtFlag', 'pinType':'interface','state':0,'priorState':0, 'pin': 14},
+            'maxFlag' : {'name' : 'maxFlag', 'pinType':'interface','state':0,'priorState':0, 'pin': 25}
+
         }
 
         self.pinsOut = {
@@ -24,12 +27,7 @@ class i2cPi:
             'dacCS': {'name':'dacCS', 'pin': 17, 'state': 0, 'priorState': 0, 'pinType': 'SPI'},
             'dacLDAC': {'name':'dacLDAC', 'pin': 27, 'state': 0, 'priorState': 0, 'pinType': 'SPI'},
             'aPWRen': {'name':'aPWRen', 'pin': 4, 'state': 0, 'priorState': 0, 'pinType': 'PWR'},
-            'dPWRen': {'name':'dPWRen', 'pin': 24, 'state': 0, 'priorState': 0, 'pinType': 'PWR'},
-        }
-
-        self.pinsIn_FanCon = {
-            'adtFlag' : {'name' : 'adtFlag', 'pinType':'interface','state':0,'priorState':0, 'pin': 14},
-            'maxFlag' : {'name' : 'maxFlag', 'pinType':'interface','state':0,'priorState':0, 'pin': 25},
+            'dPWRen': {'name':'dPWRen', 'pin': 24, 'state': 0, 'priorState': 0, 'pinType': 'PWR'}
         }
 
         self.bus = SMBus(1)
