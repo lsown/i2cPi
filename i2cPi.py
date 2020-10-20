@@ -54,10 +54,10 @@ class i2cPi:
 
 
     def updateState(self, channel, value):
-    for i in self.pinsIn:
-        if channel == self.pinsIn[i]['pin']:
-            self.pinsIn[i]['state'] = value
-            print('%s pin triggered, %s configured state to %s' %(str(channel), self.pinsIn[i]['name'], self.pinsIn[i]['state'])) # debug
+        for i in self.pinsIn:
+            if channel == self.pinsIn[i]['pin']:
+                self.pinsIn[i]['state'] = value
+                print('%s pin triggered, %s configured state to %s' %(str(channel), self.pinsIn[i]['name'], self.pinsIn[i]['state'])) # debug
 
     def displayFlag(self, channel):
     if GPIO.input(channel) == 1:
