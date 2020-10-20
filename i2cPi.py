@@ -26,8 +26,8 @@ class i2cPi:
             'adc4CS': {'name':'adc4CS', 'pin': 21, 'state': 0, 'priorState': 0, 'pinType': 'SPI'},
             'dacCS': {'name':'dacCS', 'pin': 17, 'state': 0, 'priorState': 0, 'pinType': 'SPI'},
             'dacLDAC': {'name':'dacLDAC', 'pin': 27, 'state': 0, 'priorState': 0, 'pinType': 'SPI'},
-            'aPWRen': {'name':'aPWRen', 'pin': 4, 'state': 0, 'priorState': 0, 'pinType': 'PWR'},
-            'dPWRen': {'name':'dPWRen', 'pin': 24, 'state': 0, 'priorState': 0, 'pinType': 'PWR'}
+            'aPWRen': {'name':'aPWRen', 'pin': 4, 'state': 1, 'priorState': 0, 'pinType': 'PWR'},
+            'dPWRen': {'name':'dPWRen', 'pin': 24, 'state': 1, 'priorState': 0, 'pinType': 'PWR'}
         }
 
         self.bus = SMBus(1)
