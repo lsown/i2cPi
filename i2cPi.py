@@ -31,6 +31,9 @@ class i2cPi:
         }
 
         self.bus = SMBus(1)
+        self.piSetup()
+        self.tunnel()
+        
 
     def piSetup(self): #Sets up GPIO pins, can also add to GPIO.in <pull_up_down=GPIO.PUD_UP>
 
@@ -65,7 +68,7 @@ class i2cPi:
             self.bus.read_byte_data(0x77, 0x00) #confirm channel 0 opened
             try:
                 self.bus.read_byte_data(0x41, 0x03)  #read PCA9536 configuration register, expect 0x0F - configured inputs
-                self.bus.write_byte_data_data(0x41, 0x03, 0x00) #Set register 3 to 0b0, configures all to output
+                self.bus.write_byte_data(0x41, 0x03, 0x00) #Set register 3 to 0b0, configures all to output
                 self.bus.read_byte_data(0x41, 0x03)    #Check that its configured as output
                 self.bus.read_byte_data(0x41, 0x01)  #check output register, default is 1 - 3.3V
                 self.bus.write_byte_data(0x41, 0x01, 0x00)   #write output register to 0 - change all to 0V
