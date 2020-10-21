@@ -26,8 +26,8 @@ class i2cPi:
             'adc4CS': {'name':'adc4CS', 'pin': 21, 'state': 0, 'priorState': 0, 'pinType': 'SPI'},
             'dacCS': {'name':'dacCS', 'pin': 17, 'state': 0, 'priorState': 0, 'pinType': 'SPI'},
             'dacLDAC': {'name':'dacLDAC', 'pin': 27, 'state': 0, 'priorState': 0, 'pinType': 'SPI'},
-            'aPWRen': {'name':'aPWRen', 'pin': 4, 'state': 1, 'priorState': 0, 'pinType': 'PWR'},
-            'dPWRen': {'name':'dPWRen', 'pin': 24, 'state': 1, 'priorState': 0, 'pinType': 'PWR'}
+            'dPWRen': {'name':'dPWRen', 'pin': 24, 'state': 1, 'priorState': 0, 'pinType': 'PWR'},
+            'aPWRen': {'name':'aPWRen', 'pin': 4, 'state': 1, 'priorState': 0, 'pinType': 'PWR'}
         }
 
         self.bus = SMBus(1)
@@ -60,24 +60,36 @@ class i2cPi:
 
     def tunnel(self):
         try:
-            self.bus.read_byte(0x77, 0x00)
-            self.bus.write_byte(0x77, 0x00, 0x01)
-            self.bus.read_byte(0x77, 0x00)
+            self.bus.read_byte_data(0x77, 0x00) #check config register of mux layer-0 
+            self.bus.write_byte(0x77, 0x01) #open channel 0
+            self.bus.read_byte_data(0x77, 0x00) #confirm channel 0 opened
             try:
-                self.bus.read_byte(0x41, 0x03)  #read PCA9536 configuration register, expect 0x0F - configured inputs
-                self.bus.write_byte(0x41, 0x03, 0x0F) #Set register 3 to 0b0, configures all to output
-                self.bus.read_byte(0x41, 0x03)    #Check that its configured as output
-                self.bus.read_byte(0x41, 0x01)  #check output register, default is 1.
-                self.bus.write_byte(0x41, 0x01, 0x00)   #write output register to 0.
-                self.bus.read_byte(0x41, 0x01)  #confirm that output register is 0.
+                self.bus.read_byte_data(0x41, 0x03)  #read PCA9536 configuration register, expect 0x0F - configured inputs
+                self.bus.write_byte_data_data(0x41, 0x03, 0x00) #Set register 3 to 0b0, configures all to output
+                self.bus.read_byte_data(0x41, 0x03)    #Check that its configured as output
+                self.bus.read_byte_data(0x41, 0x01)  #check output register, default is 1 - 3.3V
+                self.bus.write_byte_data(0x41, 0x01, 0x00)   #write output register to 0 - change all to 0V
+                self.bus.read_byte_data(0x41, 0x01)  #confirm that output register is 0.
             except OSError:
                 logging.info('Error 121 - Remote I/O Error on address 41 - PCA9536')
             try:
                 self.bus.read_byte(0x70, 0x00)  #check that mux has been reconfigured to address 70.
+                self.bus.write_byte(0x70, 0x82) #close mux-70 layer-0 channel 0, open ch1 & 7
             except OSError:
                 logging.info('Error 121 - Remote I/O Error on address 70 - TCA9548')
+            
+            try:
+                self.bus.read_byte(0x77, 0x00)  #check that mux-77 layer-1 channel 0 is present.
+                self.bus.write_byte(0x77, 0x81) #close mux-70 layer-0 channel 0, open ch1 & 7
+            except OSError:
+                logging.info('Error 121 - Remote I/O Error on address 77 - layer 1 - TCA9548')
 
         except OSError:
             logging.info('Error 121 - Remote I/O Error on address 77 - TCA9548')
 
-        
+    def adtConfig(self):    
+        try:
+            self.bus.write_byte(0x2c, 0x74)  #lets try to read from AD7T740.
+            self.bus.read_byte(0x2c, 0x74) #check assignment
+        except OSError:
+            logging.info('Error 121 - Remote I/O Error on address 77 - layer 1 - ADT7470')
