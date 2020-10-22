@@ -110,16 +110,16 @@ class i2cPi:
         try:
             dutyCycle_conv = int(dutyCycle/0.39)
             if dutyCycle_conv > 255:
-                dutyCycle = 255
+                dutyCycle_conv = 255
             if fan == 1:
-                self.bus.write_byte_data(0x2c, 0x32, dutyCycle) #set PWM for fan 1
+                self.bus.write_byte_data(0x2c, 0x32, dutyCycle_conv) #set PWM for fan 1
                 print('PWM1 Register 0x32 is set to %s' %(self.bus.read_byte(0x2c, 0x20)*0.39))
             elif fan == 2:
-                self.bus.write_byte_data(0x2c, 0x33, dutyCycle) #set PWM for fan 2
+                self.bus.write_byte_data(0x2c, 0x33, dutyCycle_conv) #set PWM for fan 2
             elif fan == 3:
-                self.bus.write_byte_data(0x2c, 0x34, dutyCycle) #set PWM for fan 3
+                self.bus.write_byte_data(0x2c, 0x34, dutyCycle_conv) #set PWM for fan 3
             elif fan == 4:
-                self.bus.write_byte_data(0x2c, 0x35, dutyCycle) #set PWM for fan 4
+                self.bus.write_byte_data(0x2c, 0x35, dutyCycle_conv) #set PWM for fan 4
             elif (fan > 1 or fan > 4):
                 print("Non-valid input, please select fan value 1,2,3, or 4.")
         except OSError:
