@@ -33,7 +33,6 @@ class i2cPi:
         self.bus = SMBus(1)
         self.piSetup()
         self.tunnel()
-        
 
     def piSetup(self): #Sets up GPIO pins, can also add to GPIO.in <pull_up_down=GPIO.PUD_UP>
 
@@ -57,7 +56,6 @@ class i2cPi:
     def displayFlag(self, channel):
         if GPIO.input(channel) == 1:
             self.updateState(channel, 1)
-            #self.motorControl(name='drv0', speed=0, direction = 'brake')
         if GPIO.input(channel) == 0:
             self.updateState(channel, 0)
 
@@ -91,8 +89,40 @@ class i2cPi:
             logging.info('Error 121 - Remote I/O Error on address 77 - TCA9548')
 
     def adtConfig(self):    
+        """ This block configures the system frequency """
         try:
             self.bus.write_byte(0x2c, 0x74)  #lets try to read from AD7T740.
-            self.bus.read_byte(0x2c, 0x74) #check assignment
+            self.bus.read_byte(0x2c, 0x74) #check assignment, should be 0x00.
+            self.bus.write_byte_data(0x2c, 0x40, 0x41)  #configure to low frequency mode by setting config reg 1 0x40[6] bit to 1, fan now @ 11 hz.
+            self.bus.write_byte_data(0x2c, 0x74, 0x70)  #configure from 11 Hz to 88.2Hz by setting config reg 2 0x74[6:4] bits to 111 - MAKE SURE IN LOW FREQ MODE 0x40 register
         except OSError:
             logging.info('Error 121 - Remote I/O Error on address 77 - layer 1 - ADT7470')
+
+    def tempPoll(self):
+        try:
+            self.bus.write_byte(0x2c, 0x40, 0xC1)   #set TMP daisy, set low frequency mode,  set monitoring.
+            print('Waiting for 1 seconds to gather TMP05 data')
+            time.sleep(1)   #wait 200 mS per TMP sensor, in tester board we have 4. Max of 10, so prob ~2 sec max.
+            self.bus.write_byte(0x2c, 0x40, 0x41)    #stop TMP daisy, set low frequency mode, set monitoring.
+
+            '''Let's poll each 4 and print them out'''
+
+            self.bus.write_byte(0x2c, 0x20)
+            print('Temp Register 0x20 is %s' %self.bus.read_byte(0x2c, 0x20))
+            self.bus.write_byte(0x2c, 0x21)
+            print('Temp Register 0x21 is %s' %self.bus.read_byte(0x2c, 0x21))
+            self.bus.write_byte(0x2c, 0x22)
+            print('Temp Register 0x22 is %s' %self.bus.read_byte(0x2c, 0x22))
+            self.bus.write_byte(0x2c, 0x23)
+            print('Temp Register 0x23 is %s' %self.bus.read_byte(0x2c, 0x23))
+
+        except OSError:
+            logging.info('Error 121 - Remote I/O Error on address 0x2c - failed on temp config poll') 
+
+    def shtdown(self):
+        self.bus.write_byte(0x2c, 0x74)
+        self.bus.write_byte_data(0x2c, 0x74, (self.bus.read_byte(0x2c, 0x74) | 0x80))    #keep all prior bits, flip [7] to 1.
+    
+    def enable(self):
+        self.bus.write_byte_data(0x2c, 0x40, (self.bus.read_byte(0x2c, 0x40) | 0x20))   #Set low frequency fan drive
+        self.bus.write_byte(0x2c, 0x74, 0x70)   #re-enable, set to 88.2 Hz fan speed
