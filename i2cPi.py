@@ -114,6 +114,7 @@ class i2cPi:
                 print(dutyCycle_conv)
             if fan == 1:
                 self.bus.write_byte_data(0x2c, 0x32, dutyCycle_conv) #set PWM for fan 1
+                time.sleep(1)
                 print('Test register is %s' %self.bus.read_byte(0x2c, 0x00))
                 print('PWM1 Register 0x32 is set to %s percent' %(self.bus.read_byte(0x2c, 0x00)*0.39))
             elif fan == 2:
