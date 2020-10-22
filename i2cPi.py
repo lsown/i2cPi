@@ -98,6 +98,33 @@ class i2cPi:
         except OSError:
             logging.info('Error 121 - Remote I/O Error on address 77 - layer 1 - ADT7470')
 
+    def fanConfig(self, freqRange=0, freq=7):
+        try:
+            self.bus.write_byte_data(0x2c, 0x74, 0x80)
+            print('Temp Register 0x20 is %s' %self.bus.read_byte(0x2c, 0x20))
+        except OSError:
+            logging.info('Error 121 - Remote I/O Error on address 0x2c while configuring fans')
+
+    '''fan is fan #[1-3], duty cycle is 0 to 100%'''
+    def fanPWM(self, fan=1, dutyCycle=100):
+        try:
+            dutyCycle_conv = int(dutyCycle/0.39)
+            if dutyCycle_conv > 255:
+                dutyCycle = 255
+            if fan == 1:
+                self.bus.write_byte_data(0x2c, 0x32, dutyCycle) #set PWM for fan 1
+                print('PWM1 Register 0x32 is set to %s' %(self.bus.read_byte(0x2c, 0x20)*0.39))
+            elif fan == 2:
+                self.bus.write_byte_data(0x2c, 0x33, dutyCycle) #set PWM for fan 2
+            elif fan == 3:
+                self.bus.write_byte_data(0x2c, 0x34, dutyCycle) #set PWM for fan 3
+            elif fan == 4:
+                self.bus.write_byte_data(0x2c, 0x35, dutyCycle) #set PWM for fan 4
+            elif (fan > 1 or fan > 4):
+                print("Non-valid input, please select fan value 1,2,3, or 4.")
+        except OSError:
+            logging.info('Error 121 - Remote I/O Error on address 0x2c while writing fanPWM')
+
     def tempPoll(self):
         try:
             self.bus.write_byte(0x2c, 0x40, 0xC1)   #set TMP daisy, set low frequency mode,  set monitoring.
@@ -106,14 +133,15 @@ class i2cPi:
             self.bus.write_byte(0x2c, 0x40, 0x41)    #stop TMP daisy, set low frequency mode, set monitoring.
 
             '''Let's poll each 4 and print them out'''
-
-            self.bus.write_byte(0x2c, 0x20)
+            self.bus.write_byte(0x2c, 0x78) #poll max-temp register
+            print('Max Temp Register 0x78 is %s from all temp sensors' %self.bus.read_byte(0x2c, 0x78))
+            self.bus.write_byte(0x2c, 0x20) #poll 1
             print('Temp Register 0x20 is %s' %self.bus.read_byte(0x2c, 0x20))
-            self.bus.write_byte(0x2c, 0x21)
+            self.bus.write_byte(0x2c, 0x21) #poll 2
             print('Temp Register 0x21 is %s' %self.bus.read_byte(0x2c, 0x21))
-            self.bus.write_byte(0x2c, 0x22)
+            self.bus.write_byte(0x2c, 0x22) #poll 3
             print('Temp Register 0x22 is %s' %self.bus.read_byte(0x2c, 0x22))
-            self.bus.write_byte(0x2c, 0x23)
+            self.bus.write_byte(0x2c, 0x23) #poll 4
             print('Temp Register 0x23 is %s' %self.bus.read_byte(0x2c, 0x23))
 
         except OSError:
@@ -126,3 +154,10 @@ class i2cPi:
     def enable(self):
         self.bus.write_byte_data(0x2c, 0x40, (self.bus.read_byte(0x2c, 0x40) | 0x20))   #Set low frequency fan drive
         self.bus.write_byte(0x2c, 0x74, 0x70)   #re-enable, set to 88.2 Hz fan speed
+
+    def autofan(self):
+        self.bus.write_byte_data(0x2c, 0x68, 0xC0)  #set to automatic fan control mode PWM 1 & 2
+        self.bus.write_byte_data(0x2c, 0x69, 0xC0)  #set to automatic fan control mode PWM 3 & 4
+        self.bus.write_byte_data(0x2c, 0x7C, 0x12)  #set 0x20 TMP to Fan1, 0x21 TMP to Fan2
+        self.bus.write_byte_data(0x2c, 0x7D, 0x12)  #set 0x22 TMP to Fan3, 0x23 TMP to Fan4
+        self.bus.write_byte_data(0x2c, 0x6E, )  #Temp Tmin
