@@ -108,23 +108,16 @@ class i2cPi:
     '''fan is fan #[1-3], duty cycle is 0 to 100%'''
     def fanPWM(self, fan=1, dutyCycle=100):
         try:
-            dutyCycle_conv = int(dutyCycle/0.39)
-            if dutyCycle_conv > 255:
-                dutyCycle_conv = 255
-                print(dutyCycle_conv)
-            if fan == 1:
-                self.bus.write_byte_data(0x2c, 0x32, dutyCycle_conv) #set PWM for fan 1
+            duty8bit = int(dutyCycle/0.39)
+            if duty8bit > 255:
+                duty8bit = 255
+            if (fan >= 1 and fan <= 4):
+                self.bus.write_byte_data(0x2c, (0x32+fan-1), duty8bit) #set PWM for fan
                 time.sleep(0.05)    #some delay needed for the registry to refresh from stale.
-                print('Test register is %s' %self.bus.read_byte(0x2c, 0x00))
-                print('PWM1 Register 0x32 is set to %s percent' %(self.bus.read_byte(0x2c, 0x00)*0.39))
-            elif fan == 2:
-                self.bus.write_byte_data(0x2c, 0x33, dutyCycle_conv) #set PWM for fan 2
-            elif fan == 3:
-                self.bus.write_byte_data(0x2c, 0x34, dutyCycle_conv) #set PWM for fan 3
-            elif fan == 4:
-                self.bus.write_byte_data(0x2c, 0x35, dutyCycle_conv) #set PWM for fan 4
-            elif (fan > 1 or fan > 4):
-                print("Non-valid input, please select fan value 1,2,3, or 4.")
+                readByte = self.bus.read_byte(0x2c, 0x00)
+                print('PWM1 Register 0x%s is %s, set to %s percent' %(0x32+fan-1), %readByte, (readByte*0.39))
+            else:
+                print('Fan out of range, specify fan #1, 2, 3, or 4')
         except OSError:
             logging.info('Error 121 - Remote I/O Error on address 0x2c while writing fanPWM')
 
