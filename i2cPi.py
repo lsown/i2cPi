@@ -115,7 +115,7 @@ class i2cPi:
                 self.bus.write_byte_data(0x2c, (0x32+fan-1), duty8bit) #set PWM for fan
                 time.sleep(0.1)    #some delay needed for the registry to refresh from stale.
                 readByte = self.bus.read_byte(0x2c, 0x00)
-                print('PWM1 Register 0x%s is %s, set to %s percent' %((0x32+fan-1), readByte, (readByte*0.39)))
+                print('PWM%s Register %s is %s, set to %s percent' %(fan, (hex(0x32+fan-1)), readByte, (readByte*0.39)))
             else:
                 print('Fan out of range, specify fan #1, 2, 3, or 4')
         except OSError:
