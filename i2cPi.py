@@ -126,19 +126,26 @@ class i2cPi:
                 time.sleep(0.1)    #some delay needed for the registry to refresh from stale.
                 readByte = self.bus.read_byte(0x2c, 0x00)
                 self.checkRegister(fanRegister, duty8bit)
-                print('PWM%s Register %s is set to %s hex, aka %s percent' %(fan, fanRegister, hex(readByte), (readByte*0.39)))
+                print('PWM%s Register %s is set to %s hex, aka %s percent' %(fan, hex(fanRegister), hex(readByte), (readByte*0.39)))
             else:
                 print('Fan out of range, specify fan #1, 2, 3, or 4')
         except OSError:
             logging.info('Error 121 - Remote I/O Error on address 0x2c while writing fanPWM')
 
     def rbRPM(self, fan=1):
-        self.bus.write_byte(0x2c, 0x2a)
-        lowbyte = self.bus.read_byte(0x2c, 0x2a)
-        self.bus.write_byte(0x2c, 0x2b)
-        highbyte = self.bus.read_byte(0x2c, 0x2b) << 8
-        rpm = 5400000 * 60 / (highbyte | lowbyte)   #5400000 is from 90kHz clock * 60 sec
-        print(rpm)
+        hexAddLow = 0x2a+(2*(fan-1))
+        hexAddHigh = 0x2b+(2*(fan-1))
+        '''Read order is low byte, then high byte. A low byte read will FREEZE the high byte register value until both low and high byte are read'''
+        self.bus.write_byte(0x2c, hexAddLow)    
+        lowbyte = self.bus.read_byte(0x2c, hexAddLow)
+        self.bus.write_byte(0x2c, hexAddHigh)
+        highbyte = self.bus.read_byte(0x2c, hexAddHigh) << 8
+        highlowbyte = highbyte | lowbyte    #let's concatenate these bits
+        if highlowbyte == 0xFFFF:
+            print('Fan Error! Stall, block, failure, or unpopulated')
+        else:
+            rpm = 5400000 / highlowbyte   #5400000 is from 90kHz clock * 60 sec
+            print("Fan #%s is read at rpm %s" %(fan, rpm))
 
     def checkRegister(self, askedregister, wanted):  #assumes a prior write has been performed so pointer address previously set
         readback = self.bus.read_byte(0x2c, 0x00)
