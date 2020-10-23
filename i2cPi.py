@@ -10,11 +10,11 @@ class i2cPi:
 
         logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.DEBUG, datefmt="%H:%M:%S")
 
+        #general 038 MCU DAQ configurations
         self.pinsIn = {
             'displayFlag' : {'name' : 'displayFlag', 'pinType':'interface','state':0,'priorState':0, 'pin': 22},
             'adtFlag' : {'name' : 'adtFlag', 'pinType':'interface','state':0,'priorState':0, 'pin': 14},
             'maxFlag' : {'name' : 'maxFlag', 'pinType':'interface','state':0,'priorState':0, 'pin': 25}
-
         }
 
         self.pinsOut = {
@@ -30,11 +30,17 @@ class i2cPi:
             'aPWRen': {'name':'aPWRen', 'pin': 4, 'state': 1, 'priorState': 0, 'pinType': 'PWR'}
         }
 
+        self.fanTypes = {
+            'EFB' : {'serial': 'EFB0612HHA-F00','rpm': 4800, 'pulseRev': 2, 'terminals':3, 'tachOut': 'openDrain', 'type': 'axial', 'life': 70000, 'cfm': 21.2, 'inH2O': 0.169, 'size': '60x60x10mm'},
+            'AFB' : {'serial': 'AFB0412VHA-AF00','rpm': 8000, 'pulseRev': 2, 'terminals':3, 'tachOut': 'openDrain', 'type': 'axial', 'life': 70000, 'cfm': 9.3, 'inH2O': 0.242, 'size': '40x40x10mm'},
+            'BFB' : {'serial': 'BFB0312MA-CF00','rpm': 6500, 'pulseRev': 2, 'terminals':3, 'tachOut': 'openDrain', 'type': 'blower', 'life': 30000, 'cfm': 1.2, 'inH2O': 0.206, 'size': '30x30x10mm'},
+        }
+
         self.bus = SMBus(1)
         self.piSetup()
         self.tunnel()
 
-    def piSetup(self): #Sets up GPIO pins, can also add to GPIO.in <pull_up_down=GPIO.PUD_UP>
+    def piSetup(self): #Sets up GPIO pins from the MCU DAQ, can also add to GPIO.in <pull_up_down=GPIO.PUD_UP>
 
         for i in self.pinsOut:
             GPIO.setup(self.pinsOut[i]['pin'], GPIO.OUT, initial = self.pinsOut[i]['state']) #set GPIO as OUT, configure initial value
@@ -88,56 +94,66 @@ class i2cPi:
         except OSError:
             logging.info('Error 121 - Remote I/O Error on address 77 - TCA9548')
 
-    def adtConfig(self):    
+    def fanConfig(self):    
         """ This block configures the system frequency """
         try:
-            self.bus.write_byte(0x2c, 0x74)  #lets try to read from AD7T740.
-            self.bus.read_byte(0x2c, 0x74) #check assignment, should be 0x00.
-            self.bus.write_byte_data(0x2c, 0x40, 0x41)  #configure to low frequency mode by setting config reg 1 0x40[6] bit to 1, fan now @ 11 hz.
-            self.bus.write_byte_data(0x2c, 0x74, 0x70)  #configure from 11 Hz to 88.2Hz by setting config reg 2 0x74[6:4] bits to 111 - MAKE SURE IN LOW FREQ MODE 0x40 register
+            self.fanFreq(freqRange='low', freq=7)  #configure low frequency mode, monitoring, & 88.2 Hz
+            '''The register default is 2 pulses / rev, but explicitly setting it. 
+            In the future we may want this to be a configurable function'''
+            self.bus.write_byte_data(0x2c, 0x43, 0x55)  #set conversion to 2 pulses / rev
+            self.confirmSettings(0x43, 0x55)    #confirm write to the register
+
+
         except OSError:
             logging.info('Error 121 - Remote I/O Error on address 77 - layer 1 - ADT7470')
 
-    def fanConfig(self, freqRange=0, freq=7):
+    def fanFreq(self, freqRange='low', freq=7):
         try:
+            if freqRange =='low':
+                self.bus.write_byte_data(0x2c, 0x40, 0x41)  #configure to low frequency mode by setting config reg 1 0x40[6] bit to 1, fan now @ 11 hz.
+                self.confirmSettings(0x40, 0x41)
+                print('Configured for low frequency PWM, monitoring enabled')
+            
+            self.bus.write_byte_data(0x2c, 0x74, freq)  #configure from 11 Hz to 88.2Hz by setting config reg 2 0x74[6:4] bits to 111 - MAKE SURE IN LOW FREQ MODE 0x40 register
+            self.confirmSettings(0x74, 0x70)
             self.bus.write_byte_data(0x2c, 0x74, 0x80)
             print('Temp Register 0x20 is %s' %self.bus.read_byte(0x2c, 0x20))
         except OSError:
             logging.info('Error 121 - Remote I/O Error on address 0x2c while configuring fans')
 
-    '''fan is fan #[1-3], duty cycle is 0 to 100%'''
-    def fanPWM(self, fan=1, dutyCycle=100):
+    def fanPWM(self, fan=1, dutyCycle=100): #selects fan and controls duty cycle from 0-100%
         try:
-            duty8bit = int(dutyCycle/0.39)
+            duty8bit = int(dutyCycle/0.39)  #0.39 is the conversion factor from % to bits.
+            fanRegister = 0x32+fan-1 #selector for fan register 0x32-0x35
             if duty8bit > 255:
                 duty8bit = 255
             if (fan >= 1 and fan <= 4):
-                self.bus.write_byte_data(0x2c, (0x32+fan-1), duty8bit) #set PWM for fan
+                self.bus.write_byte_data(0x2c, fanRegister, duty8bit) #set PWM for fan
                 time.sleep(0.1)    #some delay needed for the registry to refresh from stale.
                 readByte = self.bus.read_byte(0x2c, 0x00)
-                self.confirmSettings(duty8bit)
-                print('PWM%s Register %s is set to %s hex, aka %s percent' %(fan, (hex(0x32+fan-1)), hex(readByte), (readByte*0.39)))
+                self.confirmSettings(fanRegister, duty8bit)
+                print('PWM%s Register %s is set to %s hex, aka %s percent' %(fan, fanRegister, hex(readByte), (readByte*0.39)))
             else:
                 print('Fan out of range, specify fan #1, 2, 3, or 4')
         except OSError:
             logging.info('Error 121 - Remote I/O Error on address 0x2c while writing fanPWM')
 
-    def confirmSettings(self, wanted):  #assumes a prior write has been performed so pointer address previously set
+    def confirmSettings(self, askedregister, wanted):  #assumes a prior write has been performed so pointer address previously set
             readback = self.bus.read_byte(0x2c, 0x00)
             if wanted == readback:
-                print('Register value %s, %s, 0d%s applied & verified' %(hex(wanted), bin(wanted), wanted))
+                print('Register %s value %s, %s, 0d%s applied & verified' %(hex(askedregister), hex(wanted), bin(wanted), wanted))
             else:
                 print('Register value is %s, not %s wanted' %(readback, wanted))
 
-    def tempPoll(self):
+    def tempPoll(self, sensorNumber = 4): #polls max temp register and first 4 temp registers by default.
         try:
             self.bus.write_byte(0x2c, 0x40, 0xC1)   #set TMP daisy, set low frequency mode,  set monitoring.
             print('Waiting for 1 seconds to gather TMP05 data')
-            time.sleep(1)   #wait 200 mS per TMP sensor, in tester board we have 4. Max of 10, so prob ~2 sec max.
+            time.sleep(sensorNumber * 0.2)   #wait 200 mS per TMP sensor, in tester board we have 4. Max of 10, so prob ~2 sec max.
             self.bus.write_byte(0x2c, 0x40, 0x41)    #stop TMP daisy, set low frequency mode, set monitoring.
 
-            '''Let's poll each 4 and print them out'''
-            self.bus.write_byte(0x2c, 0x78) #poll max-temp register
+            '''Let's poll max detected temp register, and the other 4 and print them out'''
+            self.bus.write_byte(0x2c, 0x78) #poll max detected temp register
             print('Max Temp Register 0x78 is %s from all temp sensors' %self.bus.read_byte(0x2c, 0x78))
             self.bus.write_byte(0x2c, 0x20) #poll 1
             print('Temp Register 0x20 is %s' %self.bus.read_byte(0x2c, 0x20))
@@ -151,8 +167,7 @@ class i2cPi:
         except OSError:
             logging.info('Error 121 - Remote I/O Error on address 0x2c - failed on temp config poll') 
 
-    def shtdown(self):
-        self.bus.write_byte(0x2c, 0x74)
+    def adtEn(self):
         self.bus.write_byte_data(0x2c, 0x74, (self.bus.read_byte(0x2c, 0x74) | 0x80))    #keep all prior bits, flip [7] to 1.
     
     def enable(self):
