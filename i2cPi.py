@@ -219,8 +219,9 @@ class i2cPi:
 
     def rbTempN(self, sensorNumber = 4): #polls max temp and N sensors (up to 10)
         self.reg1_defaultConfig()   #set TMP daisy, set low frequency mode,  set monitoring.
-        print('Waiting for %s seconds to gather TMP05 data' %(sensorNumber * 2))
-        time.sleep(sensorNumber * 0.2)  #wait 200 mS per TMP sensor, in tester board we have 4. Max of 10, so prob ~2 sec max.
+        waitTime = sensorNumber * 0.2   #200 mS / TMP sensor. Max of 10 sensors. 
+        print('Waiting for %s seconds to gather TMP05 data' %waitTime)
+        time.sleep(waitTime)  #wait 200 mS per TMP sensor, in tester board we have 4. Max of 10, so prob ~2 sec max.
         self.bus.write_byte(0x2c, 0x40, 0x41)   #stop TMP daisy, set low freq, en monitoring.
         print('Max Temp Register 0x78 is %s from all temp sensors' %self.writeRead(0x78))   #poll max temp
         count = 1
