@@ -125,9 +125,9 @@ class i2cPi:
     def confirmSettings(self, wanted):  #assumes a prior write has been performed so pointer address previously set
             readback = self.bus.read_byte(0x2c, 0x00)
             if wanted == readback:
-                print('Registry value %s applied & verified' %wanted)
+                print('Register value %s, %s, 0d%s applied & verified' %(hex(wanted), bin(wanted), wanted))
             else:
-                print('Registry value is %s, not %s wanted' %(readback, wanted))
+                print('Register value is %s, not %s wanted' %(readback, wanted))
 
     def tempPoll(self):
         try:
