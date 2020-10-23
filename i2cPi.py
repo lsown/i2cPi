@@ -217,36 +217,29 @@ class i2cPi:
             rpm = 5400000 / highlowbyte   #5400000 is from 90kHz clock * 60 sec
             print("Fan #%s is read at rpm %s" %(fan, rpm))
 
-    def rbTempN(self, sensorNumber = 4): #polls max temp and first 4 temp registers (10 total available)
+    def rbTempN(self, sensorNumber = 4): #polls max temp and N sensors (up to 10)
         self.reg1_defaultConfig()   #set TMP daisy, set low frequency mode,  set monitoring.
         print('Waiting for %s seconds to gather TMP05 data' %(sensorNumber * 2))
-        time.sleep(sensorNumber * 0.2)   #wait 200 mS per TMP sensor, in tester board we have 4. Max of 10, so prob ~2 sec max.
-        self.bus.write_byte(0x2c, 0x40, 0x41)    #stop TMP daisy, set low frequency mode, set monitoring.
-        '''Let's poll max detected temp register, and the other 4 and print them out'''
-        self.bus.write_byte(0x2c, 0x78) #poll max detected temp register
+        time.sleep(sensorNumber * 0.2)  #wait 200 mS per TMP sensor, in tester board we have 4. Max of 10, so prob ~2 sec max.
+        self.bus.write_byte(0x2c, 0x40, 0x41)   #stop TMP daisy, set low freq, en monitoring.
+        print('Max Temp Register 0x78 is %s from all temp sensors' %self.writeRead(0x78))   #poll max temp
         count = 1
         try:
-            while count < (sensors + 1):
+            while count < (sensorNumber + 1):
                 hexAddTemp = 0x20+(2*(count-1))
                 logging.info('Temp Register %s is at temp value %s C' %(hex(hexAddTemp), self.writeRead(hexAddTemp)))
-                count+=1
-        '''print('Max Temp Register 0x78 is %s from all temp sensors' %self.bus.read_byte(0x2c, 0x78))
-        self.bus.write_byte(0x2c, 0x20) #poll 1
-        print('Temp Register 0x20 is %s' %self.bus.read_byte(0x2c, 0x20))
-        self.bus.write_byte(0x2c, 0x21) #poll 2
-        print('Temp Register 0x21 is %s' %self.bus.read_byte(0x2c, 0x21))
-        self.bus.write_byte(0x2c, 0x22) #poll 3
-        print('Temp Register 0x22 is %s' %self.bus.read_byte(0x2c, 0x22))
-        self.bus.write_byte(0x2c, 0x23) #poll 4
-        print('Temp Register 0x23 is %s' %self.bus.read_byte(0x2c, 0x23))'''
+                count+=1        
+        except:
+            logging.info('Failed temperature polling')
         self.reg1_defaultConfig()   #restart monitoring & prior configurations
+
 
     def rbInterrupts(self):
         print('Interrupt Status Register 1: %s' %bin(self.writeRead(0x41)))
         print('Interrupt Status Register 2: %s' %bin(self.writeRead(0x42)))
     
     def reg1_defaultConfig(self, STRT=0, HF_LF=1, T05_STB=1):
-        '''!!!INCOMPLETE!!! - change to dynamically take in values instead of hard-set values'''
+        '''!-INCOMPLETE-! - change to dynamically take in values instead of hard-set values'''
         self.bus.write_byte_data(0x2c, 0x40, 0xc1)  #config to run monitoring (0), low freq (1), & TMPstartpulse (1)
         self.checkRegister(0x40, 0xc1)
         print('Config Register 1 bits set - STRT: %s HF_LF: %s T05_STB: %s' %(STRT, HF_LF, T05_STB))
