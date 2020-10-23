@@ -115,11 +115,19 @@ class i2cPi:
                 self.bus.write_byte_data(0x2c, (0x32+fan-1), duty8bit) #set PWM for fan
                 time.sleep(0.1)    #some delay needed for the registry to refresh from stale.
                 readByte = self.bus.read_byte(0x2c, 0x00)
-                print('PWM%s Register %s isset to %s hex, aka %s percent' %(fan, (hex(0x32+fan-1)), hex(readByte), (readByte*0.39)))
+                self.confirmSettings(duty8bit)
+                print('PWM%s Register %s is set to %s hex, aka %s percent' %(fan, (hex(0x32+fan-1)), hex(readByte), (readByte*0.39)))
             else:
                 print('Fan out of range, specify fan #1, 2, 3, or 4')
         except OSError:
             logging.info('Error 121 - Remote I/O Error on address 0x2c while writing fanPWM')
+
+    def confirmSettings(self, wanted):  #assumes a prior write has been performed so pointer address previously set
+            readback = self.bus.read_byte(0x2c, 0x00)
+            if wanted == readback:
+                print('Registry value %s applied & verified' %wanted)
+            else:
+                print('Registry value is %s, not %s wanted' %(readback, wanted))
 
     def tempPoll(self):
         try:
