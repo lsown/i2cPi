@@ -226,7 +226,7 @@ class i2cPi:
         count = 1
         try:
             while count < (sensorNumber + 1):
-                hexAddTemp = 0x20+count
+                hexAddTemp = 0x20 + count - 1
                 logging.info('Temp Register %s is at temp value %s C' %(hex(hexAddTemp), self.writeRead(hexAddTemp)))
                 count+=1        
         except:
