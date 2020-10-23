@@ -188,6 +188,7 @@ class i2cPi:
                 logging.info('Address %s applied value %s' %(hex(hexAddLow), hex(tempLow)))
                 self.bus.write_byte_data(0x2c, hexAddHigh, tempHigh)   #write tempHigh for all 10
                 logging.info('Address %s applied value %s' %(hex(hexAddHigh), hex(tempHigh)))
+                count += 1
         except:
             logging.info('Failed to set')
 
