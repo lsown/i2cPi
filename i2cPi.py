@@ -142,17 +142,12 @@ class i2cPi:
         highbyte = self.bus.read_byte(0x2c, hexAddHigh) << 8
         highlowbyte = highbyte | lowbyte    #let's concatenate these bits
         if highlowbyte == 0xFFFF:
-            print('Fan Error! Stall, block, failure, or unpopulated')
+            print('Fan Error! PWM @ 0%, stalled, blocked, failed, or unpopulated')
         else:
             rpm = 5400000 / highlowbyte   #5400000 is from 90kHz clock * 60 sec
             print("Fan #%s is read at rpm %s" %(fan, rpm))
 
-    def checkRegister(self, askedregister, wanted):  #assumes a prior write has been performed so pointer address previously set
-        readback = self.bus.read_byte(0x2c, 0x00)
-        if wanted == readback:
-            print('Register %s value %s, %s, 0d%s applied & verified' %(hex(askedregister), hex(wanted), bin(wanted), wanted))
-        else:
-            print('Register value is %s, not %s wanted' %(readback, wanted))
+
 
     def tempPoll(self, sensorNumber = 4): #polls max temp register and first 4 temp registers by default.
         try:
@@ -176,16 +171,58 @@ class i2cPi:
         except OSError:
             logging.info('Error 121 - Remote I/O Error on address 0x2c - failed on temp config poll') 
 
+    '''tmin range: 0-255 degrees, pmin & pmax: 0-255 for 0-100% - reference pg.26 of ADT740 for instructions'''
+    def autoFan(self, 
+    tmin1=25, tmin2=25, tmin3=25, tmin4=25, 
+    pmin1=0xF, pmin2=0xF, pmin3=0xF, pmin4=0xF,
+    pmax1=0xFF, pmax2=0xFF, pmax3=0xFF, pmax4=0xFF):
+        '''Configure to automatic fan control in PWM1/2 & PWM3/4 registers'''
+        self.bus.write_byte_data(0x2c, 0x68, 0xC0)  #set to automatic fan control mode PWM 1 & 2
+        self.bus.write_byte_data(0x2c, 0x69, 0xC0)  #set to automatic fan control mode PWM 3 & 4
+        '''Assign tmp sensors to each fan'''
+        self.bus.write_byte_data(0x2c, 0x7C, 0x12)  #Assign 0x20 TMP sensor to Fan1, 0x21 TMP to Fan2
+        self.bus.write_byte_data(0x2c, 0x7D, 0x12)  #Assign 0x22 TMP sensor to Fan3, 0x23 TMP to Fan4
+        '''When temp exceeds Tmin, fan runs at PWMin. Increases to max speed PWMax at Tmin + 20C'''
+        self.bus.write_byte_data(0x2c, 0x6E, tmin1)  #Temp Tmin1 register
+        self.bus.write_byte_data(0x2c, 0x6F, tmin2)  #Temp Tmin2 register
+        self.bus.write_byte_data(0x2c, 0x70, tmin3)  #Temp Tmin3 register
+        self.bus.write_byte_data(0x2c, 0x71, tmin4)  #Temp Tmin4 register
+        '''Sets PWM min duty cycle - will start running @ this duty cycle when Tmin exceeded'''
+        pmin1hex = int(pmin1 / 0.39)
+        self.bus.write_byte_data(0x2c, 0x6A, pmin1)  #PWM1 min speed register
+        self.bus.write_byte_data(0x2c, 0x6B, pmin2)  #PWM2 min speed register
+        self.bus.write_byte_data(0x2c, 0x6C, pmin3)  #PWM3 min speed register
+        self.bus.write_byte_data(0x2c, 0x6D, pmin4)  #PWM4 min speed register
+        '''Sets PWM max duty cycle - will start running @ this duty cycle when Tmin exceeded'''
+        self.bus.write_byte_data(0x2c, 0x6A, pmax1)  #PWM1 max speed register
+        self.bus.write_byte_data(0x2c, 0x6B, pmax2)  #PWM2 max speed register
+        self.bus.write_byte_data(0x2c, 0x6C, pmax3)  #PWM3 max speed register
+        self.bus.write_byte_data(0x2c, 0x6D, pmax4)  #PWM4 max speed register
+        '''Sets PWM max duty cycle - will start running @ this duty cycle when Tmin exceeded'''
+        self.configReg1(STRT=0, HF_LF=0, T05_STB=1) #config to run monitoring, low freq, & TMPstartpulse
+
+    def rbFanPWM(self):
+        for fanRegister in [0x32, 0x33, 0x34, 0x35]:
+            self.bus.write_byte(0x2c, fanRegister)
+            readByte=self.bus.read_byte(0x2c, 0x00)
+            print('PWM Register %s is set to %s hex, aka %s percent' %(hex(fanRegister), hex(readByte), (readByte*0.39)))
+
+    '''need to change this later to dynamically take in values instead of hard-set values'''
+    def configReg1(self, STRT=0, HF_LF=0, T05_STB=1):
+        self.bus.write_byte_data(0x2c, 0x40, 0xc1)  #config to run monitoring, low freq, & TMPstartpulse
+        self.checkRegister(0x40, 0xc1)
+        print('Config Register 1 bits - STRT: %s HF_LF: %s T05_STB: %s' %(STRT, HF_LF, T05_STB))
+
+    def checkRegister(self, askedregister, wanted):  #assumes a prior write has been performed so pointer address previously set
+        readback = self.bus.read_byte(0x2c, 0x00)
+        if wanted == readback:
+            print('Register %s value %s, %s, 0d%s applied & verified' %(hex(askedregister), hex(wanted), bin(wanted), wanted))
+        else:
+            print('Register value is %s, not %s wanted' %(readback, wanted))
+
     def adtEn(self):
         self.bus.write_byte_data(0x2c, 0x74, (self.bus.read_byte(0x2c, 0x74) | 0x80))    #keep all prior bits, flip [7] to 1.
     
     def enable(self):
         self.bus.write_byte_data(0x2c, 0x40, (self.bus.read_byte(0x2c, 0x40) | 0x20))   #Set low frequency fan drive
         self.bus.write_byte(0x2c, 0x74, 0x70)   #re-enable, set to 88.2 Hz fan speed
-
-    def autofan(self):
-        self.bus.write_byte_data(0x2c, 0x68, 0xC0)  #set to automatic fan control mode PWM 1 & 2
-        self.bus.write_byte_data(0x2c, 0x69, 0xC0)  #set to automatic fan control mode PWM 3 & 4
-        self.bus.write_byte_data(0x2c, 0x7C, 0x12)  #set 0x20 TMP to Fan1, 0x21 TMP to Fan2
-        self.bus.write_byte_data(0x2c, 0x7D, 0x12)  #set 0x22 TMP to Fan3, 0x23 TMP to Fan4
-        self.bus.write_byte_data(0x2c, 0x6E, )  #Temp Tmin
