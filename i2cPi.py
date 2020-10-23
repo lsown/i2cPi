@@ -103,7 +103,7 @@ class i2cPi:
 
     def fanFreq(self, freqRange='low', freq=7):
         if freqRange =='low':
-            self.bus.write_byte_data(0x2c, 0x40, 0x41)  #configure to low frequency mode by setting config reg 1 0x40[6] bit to 1, fan now between 11-88.2 hz depending on prior 0x74 register values.
+            self.bus.write_byte_data(0x2c, 0x40, 0x41)  #configure to low frequency mode - fan now between 11-88.2 hz depending on prior 0x74 register values.
             self.checkRegister(0x40, 0x41)
             print('Configured for low frequency PWM, monitoring enabled')
         elif freqRange =='hi':
@@ -151,7 +151,7 @@ class i2cPi:
 
     def tempPoll(self, sensorNumber = 4): #polls max temp register and first 4 temp registers by default.
         try:
-            self.bus.write_byte(0x2c, 0x40, 0xC1)   #set TMP daisy, set low frequency mode,  set monitoring.
+            self.bus.write_byte(0x2c, 0x40, 0xc1)   #set TMP daisy, set low frequency mode,  set monitoring.
             print('Waiting for 1 seconds to gather TMP05 data')
             time.sleep(sensorNumber * 0.2)   #wait 200 mS per TMP sensor, in tester board we have 4. Max of 10, so prob ~2 sec max.
             self.bus.write_byte(0x2c, 0x40, 0x41)    #stop TMP daisy, set low frequency mode, set monitoring.
@@ -181,6 +181,7 @@ class i2cPi:
         '''Configure to automatic fan control in PWM1/2 & PWM3/4 registers'''
         self.bus.write_byte_data(0x2c, 0x68, 0xC0)  #set to automatic fan control mode PWM 1 & 2
         self.bus.write_byte_data(0x2c, 0x69, 0xC0)  #set to automatic fan control mode PWM 3 & 4
+        logging.info('Configuring to automatic fan control behavior for PWM1-4')
         '''Assign tmp sensors to each fan'''
         self.bus.write_byte_data(0x2c, 0x7C, 0x12)  #Assign 0x20 TMP sensor to Fan1, 0x21 TMP to Fan2
         self.bus.write_byte_data(0x2c, 0x7D, 0x34)  #Assign 0x22 TMP sensor to Fan3, 0x23 TMP to Fan4
@@ -189,18 +190,23 @@ class i2cPi:
         self.bus.write_byte_data(0x2c, 0x6F, tmin2)  #Temp Tmin2 register
         self.bus.write_byte_data(0x2c, 0x70, tmin3)  #Temp Tmin3 register
         self.bus.write_byte_data(0x2c, 0x71, tmin4)  #Temp Tmin4 register
+        logging.info('Setting min. temp to %s, %s, %s, & %s' %(tmin1, tmin2, tmin3, tmin4))
         '''Sets PWM min duty cycle - will start running @ this duty cycle when Tmin exceeded'''
         self.bus.write_byte_data(0x2c, 0x6A, pmin1)  #PWM1 min speed register
         self.bus.write_byte_data(0x2c, 0x6B, pmin2)  #PWM2 min speed register
         self.bus.write_byte_data(0x2c, 0x6C, pmin3)  #PWM3 min speed register
         self.bus.write_byte_data(0x2c, 0x6D, pmin4)  #PWM4 min speed register
+        logging.info('Setting min pwm to %s, %s, %s, & %s' 
+            %((pmin1/.39), (pmin2/.39), (pmin3/.39), (pmin4/.39))
         '''Sets PWM max duty cycle - will start running @ this duty cycle when Tmin exceeded'''
         self.bus.write_byte_data(0x2c, 0x6A, pmax1)  #PWM1 max speed register
         self.bus.write_byte_data(0x2c, 0x6B, pmax2)  #PWM2 max speed register
         self.bus.write_byte_data(0x2c, 0x6C, pmax3)  #PWM3 max speed register
         self.bus.write_byte_data(0x2c, 0x6D, pmax4)  #PWM4 max speed register
+        logging.info('Setting max pwm to %s, %s, %s, & %s' 
+            %((pmax1/.39), (pmax2/.39), (pmax3/.39), (pmax4/.39))
         '''Sets PWM max duty cycle - will start running @ this duty cycle when Tmin exceeded'''
-        self.configReg1(STRT=0, HF_LF=0, T05_STB=1) #config to run monitoring, low freq, & TMPstartpulse
+        self.reg1_defaultConfig(STRT=0, HF_LF=1, T05_STB=1) #config to run monitoring, low freq, & TMPstartpulse
 
     def rbFanPWM(self):
         for fanRegister in [0x32, 0x33, 0x34, 0x35]:
@@ -209,10 +215,10 @@ class i2cPi:
             print('PWM Register %s is set to %s hex, aka %s percent' %(hex(fanRegister), hex(readByte), (readByte*0.39)))
 
     '''need to change this later to dynamically take in values instead of hard-set values'''
-    def configReg1(self, STRT=0, HF_LF=0, T05_STB=1):
-        self.bus.write_byte_data(0x2c, 0x40, 0xc1)  #config to run monitoring, low freq, & TMPstartpulse
+    def reg1_defaultConfig(self, STRT=0, HF_LF=1, T05_STB=1):
+        self.bus.write_byte_data(0x2c, 0x40, 0xc1)  #config to run monitoring (0), low freq (1), & TMPstartpulse (1)
         self.checkRegister(0x40, 0xc1)
-        print('Config Register 1 bits - STRT: %s HF_LF: %s T05_STB: %s' %(STRT, HF_LF, T05_STB))
+        print('Config Register 1 bits set - STRT: %s HF_LF: %s T05_STB: %s' %(STRT, HF_LF, T05_STB))
 
     def checkRegister(self, askedregister, wanted):  #assumes a prior write has been performed so pointer address previously set
         readback = self.bus.read_byte(0x2c, 0x00)
