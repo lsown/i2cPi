@@ -198,7 +198,6 @@ class i2cPi:
             readByte=self.bus.read_byte(0x2c, 0x00)
             print('PWM Register %s is set to %s hex, aka %s percent' %(hex(fanRegister), hex(readByte), (readByte*0.39)))
 
-
     def rbRPM(self, fan=1):
         hexAddLow = 0x2a+(2*(fan-1))
         hexAddHigh = 0x2b+(2*(fan-1))
@@ -232,6 +231,11 @@ class i2cPi:
         print('Temp Register 0x23 is %s' %self.bus.read_byte(0x2c, 0x23))
         self.reg1_defaultConfig()   #restart monitoring & prior configurations
 
+    def rbInterrupts(self):
+        print('Interrupt Status Register 1: %s' %bin(self.writeRead(0x41)))
+        print('Interrupt Status Register 1: %s' %bin(self.writeRead(0x42)))
+
+
     
     def reg1_defaultConfig(self, STRT=0, HF_LF=1, T05_STB=1):
         '''!!!INCOMPLETE!!! - change to dynamically take in values instead of hard-set values'''
@@ -245,6 +249,10 @@ class i2cPi:
             print('Register %s value %s, %s, 0d%s applied & verified' %(hex(wantedReg), hex(wantedVal), bin(wantedVal), wantedVal))
         else:
             print('Register value is %s, not %s wanted' %(readback, wantedVal))
+
+    def writeRead(self, pointerAddress):
+        self.bus.write_byte(0x2c, pointerAddress)
+        return self.bus.read_byte(0x2c, pointerAddress)
 
     def adtEn(self):
         self.bus.write_byte_data(0x2c, 0x74, (self.bus.read_byte(0x2c, 0x74) | 0x80))    #keep all prior bits, flip [7] to 1.
