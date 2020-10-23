@@ -192,6 +192,10 @@ class i2cPi:
         except:
             logging.info('Failed to set')
 
+    def setTachLimits(self, tachMinLowB, tachMinHighB, tachMaxLowB, tachMaxHighB):
+        #Default value sets min and max at furthest range, so does not trigger SMBALERT
+        '''!INCOMPLETE! - register is 0x58 - 0x67. This register is a bit nasty, as we have to know map the relationship between normal PWM duty cycle, frequency, and tachometer readback and adjust this TachLimit as the automatic fan controller adjusts PWM up and down in response to temperature. Otherwise, I think these registers will Flag.'''
+
     def rbPWM(self):
         for fanRegister in [0x32, 0x33, 0x34, 0x35]:
             self.bus.write_byte(0x2c, fanRegister)
@@ -220,7 +224,13 @@ class i2cPi:
         self.bus.write_byte(0x2c, 0x40, 0x41)    #stop TMP daisy, set low frequency mode, set monitoring.
         '''Let's poll max detected temp register, and the other 4 and print them out'''
         self.bus.write_byte(0x2c, 0x78) #poll max detected temp register
-        print('Max Temp Register 0x78 is %s from all temp sensors' %self.bus.read_byte(0x2c, 0x78))
+        count = 1
+        try:
+            while count < (sensors + 1):
+                hexAddTemp = 0x20+(2*(count-1))
+                logging.info('Temp Register %s is at temp value %s' %(hex(hexAddTemp), self.writeRead(hexAddTemp)))
+                count+=1
+        '''print('Max Temp Register 0x78 is %s from all temp sensors' %self.bus.read_byte(0x2c, 0x78))
         self.bus.write_byte(0x2c, 0x20) #poll 1
         print('Temp Register 0x20 is %s' %self.bus.read_byte(0x2c, 0x20))
         self.bus.write_byte(0x2c, 0x21) #poll 2
@@ -228,14 +238,12 @@ class i2cPi:
         self.bus.write_byte(0x2c, 0x22) #poll 3
         print('Temp Register 0x22 is %s' %self.bus.read_byte(0x2c, 0x22))
         self.bus.write_byte(0x2c, 0x23) #poll 4
-        print('Temp Register 0x23 is %s' %self.bus.read_byte(0x2c, 0x23))
+        print('Temp Register 0x23 is %s' %self.bus.read_byte(0x2c, 0x23))'''
         self.reg1_defaultConfig()   #restart monitoring & prior configurations
 
     def rbInterrupts(self):
         print('Interrupt Status Register 1: %s' %bin(self.writeRead(0x41)))
-        print('Interrupt Status Register 1: %s' %bin(self.writeRead(0x42)))
-
-
+        print('Interrupt Status Register 2: %s' %bin(self.writeRead(0x42)))
     
     def reg1_defaultConfig(self, STRT=0, HF_LF=1, T05_STB=1):
         '''!!!INCOMPLETE!!! - change to dynamically take in values instead of hard-set values'''
