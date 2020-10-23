@@ -219,7 +219,7 @@ class i2cPi:
 
     def rbTempN(self, sensorNumber = 4): #polls max temp and first 4 temp registers (10 total available)
         self.reg1_defaultConfig()   #set TMP daisy, set low frequency mode,  set monitoring.
-        print('Waiting for 1 seconds to gather TMP05 data')
+        print('Waiting for %s seconds to gather TMP05 data' %(sensorNumber * 2))
         time.sleep(sensorNumber * 0.2)   #wait 200 mS per TMP sensor, in tester board we have 4. Max of 10, so prob ~2 sec max.
         self.bus.write_byte(0x2c, 0x40, 0x41)    #stop TMP daisy, set low frequency mode, set monitoring.
         '''Let's poll max detected temp register, and the other 4 and print them out'''
@@ -228,7 +228,7 @@ class i2cPi:
         try:
             while count < (sensors + 1):
                 hexAddTemp = 0x20+(2*(count-1))
-                logging.info('Temp Register %s is at temp value %s' %(hex(hexAddTemp), self.writeRead(hexAddTemp)))
+                logging.info('Temp Register %s is at temp value %s C' %(hex(hexAddTemp), self.writeRead(hexAddTemp)))
                 count+=1
         '''print('Max Temp Register 0x78 is %s from all temp sensors' %self.bus.read_byte(0x2c, 0x78))
         self.bus.write_byte(0x2c, 0x20) #poll 1
@@ -254,7 +254,7 @@ class i2cPi:
     def checkRegister(self, wantedReg, wantedVal):  #assumes a prior write has been performed so pointer address previously set
         readback = self.bus.read_byte(0x2c, 0x00)
         if wantedVal == readback:
-            print('Register %s value %s, %s, 0d%s applied & verified' %(hex(wantedReg), hex(wantedVal), bin(wantedVal), wantedVal))
+            print('Register %s value check: (%s, %s, 0d%s)' %(hex(wantedReg), hex(wantedVal), bin(wantedVal), wantedVal))
         else:
             print('Register value is %s, not %s wanted' %(readback, wantedVal))
 
