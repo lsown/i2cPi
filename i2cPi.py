@@ -168,6 +168,8 @@ class i2cPi:
             self.bus.write_byte(0x2c, 0x23) #poll 4
             print('Temp Register 0x23 is %s' %self.bus.read_byte(0x2c, 0x23))
 
+            self.bus.write_byte(0x2c, 0x40, 0xC1)   #restart monitoring & prior configurations
+
         except OSError:
             logging.info('Error 121 - Remote I/O Error on address 0x2c - failed on temp config poll') 
 
@@ -188,7 +190,6 @@ class i2cPi:
         self.bus.write_byte_data(0x2c, 0x70, tmin3)  #Temp Tmin3 register
         self.bus.write_byte_data(0x2c, 0x71, tmin4)  #Temp Tmin4 register
         '''Sets PWM min duty cycle - will start running @ this duty cycle when Tmin exceeded'''
-        pmin1hex = int(pmin1 / 0.39)
         self.bus.write_byte_data(0x2c, 0x6A, pmin1)  #PWM1 min speed register
         self.bus.write_byte_data(0x2c, 0x6B, pmin2)  #PWM2 min speed register
         self.bus.write_byte_data(0x2c, 0x6C, pmin3)  #PWM3 min speed register
