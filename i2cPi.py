@@ -95,27 +95,34 @@ class i2cPi:
             logging.info('Error 121 - Remote I/O Error on address 77 - TCA9548')
 
     def fanConfig(self):    
-        self.fanFreq('low', 7)  #configure low frequency mode, monitoring, & 88.2 Hz
-        '''The register default is 2 pulses / rev, but explicitly setting it. 
-        In the future we may want this to be a configurable function'''
-        self.bus.write_byte_data(0x2c, 0x43, 0x55)  #set conversion to 2 pulses / rev
-        self.checkRegister(0x43, 0x55)
+        self.setFreq()  #configure low frequency mode, monitoring, & 88.2 Hz
+        self.setPulsesPerRev()
 
-    def fanFreq(self, freqRange='low', freq=7):
+    def setFreq(self, freqRange='low', freqBits=0b111): 
         if freqRange =='low':
-            self.bus.write_byte_data(0x2c, 0x40, 0x41)  #configure to low frequency mode - fan now between 11-88.2 hz depending on prior 0x74 register values.
+            self.reg1_defaultConfig()   #set low freq + monitoring + temp - range now 11-88.2 hz.
             self.checkRegister(0x40, 0x41)
             print('Configured for low frequency PWM, monitoring enabled')
         elif freqRange =='hi':
-            self.bus.write_byte(0x2c, 0x40, 0x01)   #configure to high frequency mode, monitoring
+            self.bus.write_byte(0x2c, 0x40, 0x81)   #set high freq + monitoring + temp
             self.checkRegister(0x40, 0x41)
             print('Configured for high frequency PWM, monitoring enabled')
         else:
             print('Nonvalid entry for freq range, enter low or hi')
-        self.bus.write_byte_data(0x2c, 0x74, freq)  #hard set 88.2Hz if freq=7 by setting config reg 2 0x74[6:4] bits to 111 - MAKE SURE IN register 0x40 is in LOW FREQ MODE before changing to avoid fan damage.
+        self.bus.write_byte(0x2c, 0x74)
+        currentVal = self.bus.read_byte(0x2c, 0x74)
+        freqBits = freqBits << 3 | currentVal    #freqBits pos [6:4], bitshift 3 to left, insert into current register values
+        self.bus.write_byte_data(0x2c, 0x74, freqBits)  #hard set 88.2Hz if freq=7 by setting config reg 2 0x74[6:4] bits to 111 - MAKE SURE IN register 0x40 is in LOW FREQ MODE before changing to avoid fan damage.
         self.checkRegister(0x74, 0x70)
 
-    def fanPWM(self, fan=1, dutyCycle=100): #selects fan and controls duty cycle from 0-100%
+    def setPulsesPerRev(self, fan=1, pulseRev = 2):
+        '''!!!INCOMPLETE!!!! Want this function to allow configuration per fan, currently hardsets all 4 to 2 pulsese / revolution'''
+        # bits assignment for each pulse per rev: 00=1, 01=2, 10=3, 11=4
+        self.bus.write_byte_data(0x2c, 0x43, 0x55)  #!!!HARDSET!!! - 2 pulses / rev
+        self.checkRegister(0x43, 0x55)
+        print("Configured Fan1-4 for 2 pulses per revolution")
+
+    def setPWM(self, fan=1, dutyCycle=100): #selects fan and controls duty cycle from 0-100%
         try:
             duty8bit = int(dutyCycle/0.39)  #0.39 is the conversion factor from % to bits.
             fanRegister = 0x32+fan-1 #selector for fan register 0x32-0x35
@@ -132,49 +139,9 @@ class i2cPi:
         except OSError:
             logging.info('Error 121 - Remote I/O Error on address 0x2c while writing fanPWM')
 
-    def rbRPM(self, fan=1):
-        hexAddLow = 0x2a+(2*(fan-1))
-        hexAddHigh = 0x2b+(2*(fan-1))
-        '''Read order is low byte, then high byte. A low byte read will FREEZE the high byte register value until both low and high byte are read'''
-        self.bus.write_byte(0x2c, hexAddLow)    
-        lowbyte = self.bus.read_byte(0x2c, hexAddLow)
-        self.bus.write_byte(0x2c, hexAddHigh)
-        highbyte = self.bus.read_byte(0x2c, hexAddHigh) << 8
-        highlowbyte = highbyte | lowbyte    #let's concatenate these bits
-        if highlowbyte == 0xFFFF:
-            print('Fan Error! PWM @ 0%, stalled, blocked, failed, or unpopulated')
-        else:
-            rpm = 5400000 / highlowbyte   #5400000 is from 90kHz clock * 60 sec
-            print("Fan #%s is read at rpm %s" %(fan, rpm))
-
-
-
-    def tempPoll(self, sensorNumber = 4): #polls max temp register and first 4 temp registers by default.
-        try:
-            self.bus.write_byte(0x2c, 0x40, 0xc1)   #set TMP daisy, set low frequency mode,  set monitoring.
-            print('Waiting for 1 seconds to gather TMP05 data')
-            time.sleep(sensorNumber * 0.2)   #wait 200 mS per TMP sensor, in tester board we have 4. Max of 10, so prob ~2 sec max.
-            self.bus.write_byte(0x2c, 0x40, 0x41)    #stop TMP daisy, set low frequency mode, set monitoring.
-
-            '''Let's poll max detected temp register, and the other 4 and print them out'''
-            self.bus.write_byte(0x2c, 0x78) #poll max detected temp register
-            print('Max Temp Register 0x78 is %s from all temp sensors' %self.bus.read_byte(0x2c, 0x78))
-            self.bus.write_byte(0x2c, 0x20) #poll 1
-            print('Temp Register 0x20 is %s' %self.bus.read_byte(0x2c, 0x20))
-            self.bus.write_byte(0x2c, 0x21) #poll 2
-            print('Temp Register 0x21 is %s' %self.bus.read_byte(0x2c, 0x21))
-            self.bus.write_byte(0x2c, 0x22) #poll 3
-            print('Temp Register 0x22 is %s' %self.bus.read_byte(0x2c, 0x22))
-            self.bus.write_byte(0x2c, 0x23) #poll 4
-            print('Temp Register 0x23 is %s' %self.bus.read_byte(0x2c, 0x23))
-
-            self.bus.write_byte(0x2c, 0x40, 0xC1)   #restart monitoring & prior configurations
-
-        except OSError:
-            logging.info('Error 121 - Remote I/O Error on address 0x2c - failed on temp config poll') 
-
     '''tmin range: 0-255 degrees, pmin & pmax: 0-255 for 0-100% - reference pg.26 of ADT740 for instructions'''
-    def autoFan(self, 
+
+    def setAutoMonitor(self, 
     tmin1=25, tmin2=25, tmin3=25, tmin4=25, 
     pmin1=0xF, pmin2=0xF, pmin3=0xF, pmin4=0xF,
     pmax1=0xFF, pmax2=0xFF, pmax3=0xFF, pmax4=0xFF):
@@ -208,24 +175,75 @@ class i2cPi:
         '''Sets PWM max duty cycle - will start running @ this duty cycle when Tmin exceeded'''
         self.reg1_defaultConfig(STRT=0, HF_LF=1, T05_STB=1) #config to run monitoring, low freq, & TMPstartpulse
 
-    def rbFanPWM(self):
+    def setTempLimits(self, tempLow = 0x4, tempHigh = 0x50, sensors = 4):
+        '''default power-on values is -127C (0x81) & 127C (0x7F)'''
+        '''MSB signifies negative temp, ADC - 256'''
+        '''register 0x44 - 0x57'''
+        count = 1
+        try:
+            while count < (sensors + 1):
+                hexAddLow = 0x44+(2*(count-1))
+                hexAddHigh = 0x45+(2*(count-1))
+                self.bus.write_byte_data(0x2c, hexAddLow, tempLow)   #write tempLow for all 10
+                logging.info('Address %s applied value %s' %(hex(hexAddLow), hex(tempLow)))
+                self.bus.write_byte_data(0x2c, hexAddHigh, tempHigh)   #write tempHigh for all 10
+                logging.info('Address %s applied value %s' %(hex(hexAddHigh), hex(tempHigh)))
+        except:
+            logging.info('Failed to set')
+
+    def rbPWM(self):
         for fanRegister in [0x32, 0x33, 0x34, 0x35]:
             self.bus.write_byte(0x2c, fanRegister)
             readByte=self.bus.read_byte(0x2c, 0x00)
             print('PWM Register %s is set to %s hex, aka %s percent' %(hex(fanRegister), hex(readByte), (readByte*0.39)))
 
-    '''need to change this later to dynamically take in values instead of hard-set values'''
+
+    def rbRPM(self, fan=1):
+        hexAddLow = 0x2a+(2*(fan-1))
+        hexAddHigh = 0x2b+(2*(fan-1))
+        '''Read order is low byte, then high byte. A low byte read will FREEZE the high byte register value until both low and high byte are read'''
+        self.bus.write_byte(0x2c, hexAddLow)    
+        lowbyte = self.bus.read_byte(0x2c, hexAddLow)
+        self.bus.write_byte(0x2c, hexAddHigh)
+        highbyte = self.bus.read_byte(0x2c, hexAddHigh) << 8
+        highlowbyte = highbyte | lowbyte    #let's concatenate these bits
+        if highlowbyte == 0xFFFF:
+            print('Fan Error! PWM @ 0%, stalled, blocked, failed, or unpopulated')
+        else:
+            rpm = 5400000 / highlowbyte   #5400000 is from 90kHz clock * 60 sec
+            print("Fan #%s is read at rpm %s" %(fan, rpm))
+
+    def rbTempN(self, sensorNumber = 4): #polls max temp and first 4 temp registers (10 total available)
+        self.reg1_defaultConfig()   #set TMP daisy, set low frequency mode,  set monitoring.
+        print('Waiting for 1 seconds to gather TMP05 data')
+        time.sleep(sensorNumber * 0.2)   #wait 200 mS per TMP sensor, in tester board we have 4. Max of 10, so prob ~2 sec max.
+        self.bus.write_byte(0x2c, 0x40, 0x41)    #stop TMP daisy, set low frequency mode, set monitoring.
+        '''Let's poll max detected temp register, and the other 4 and print them out'''
+        self.bus.write_byte(0x2c, 0x78) #poll max detected temp register
+        print('Max Temp Register 0x78 is %s from all temp sensors' %self.bus.read_byte(0x2c, 0x78))
+        self.bus.write_byte(0x2c, 0x20) #poll 1
+        print('Temp Register 0x20 is %s' %self.bus.read_byte(0x2c, 0x20))
+        self.bus.write_byte(0x2c, 0x21) #poll 2
+        print('Temp Register 0x21 is %s' %self.bus.read_byte(0x2c, 0x21))
+        self.bus.write_byte(0x2c, 0x22) #poll 3
+        print('Temp Register 0x22 is %s' %self.bus.read_byte(0x2c, 0x22))
+        self.bus.write_byte(0x2c, 0x23) #poll 4
+        print('Temp Register 0x23 is %s' %self.bus.read_byte(0x2c, 0x23))
+        self.reg1_defaultConfig()   #restart monitoring & prior configurations
+
+    
     def reg1_defaultConfig(self, STRT=0, HF_LF=1, T05_STB=1):
+        '''!!!INCOMPLETE!!! - change to dynamically take in values instead of hard-set values'''
         self.bus.write_byte_data(0x2c, 0x40, 0xc1)  #config to run monitoring (0), low freq (1), & TMPstartpulse (1)
         self.checkRegister(0x40, 0xc1)
         print('Config Register 1 bits set - STRT: %s HF_LF: %s T05_STB: %s' %(STRT, HF_LF, T05_STB))
 
-    def checkRegister(self, askedregister, wanted):  #assumes a prior write has been performed so pointer address previously set
+    def checkRegister(self, wantedReg, wantedVal):  #assumes a prior write has been performed so pointer address previously set
         readback = self.bus.read_byte(0x2c, 0x00)
-        if wanted == readback:
-            print('Register %s value %s, %s, 0d%s applied & verified' %(hex(askedregister), hex(wanted), bin(wanted), wanted))
+        if wantedVal == readback:
+            print('Register %s value %s, %s, 0d%s applied & verified' %(hex(wantedReg), hex(wantedVal), bin(wantedVal), wantedVal))
         else:
-            print('Register value is %s, not %s wanted' %(readback, wanted))
+            print('Register value is %s, not %s wanted' %(readback, wantedVal))
 
     def adtEn(self):
         self.bus.write_byte_data(0x2c, 0x74, (self.bus.read_byte(0x2c, 0x74) | 0x80))    #keep all prior bits, flip [7] to 1.
