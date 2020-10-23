@@ -183,7 +183,7 @@ class i2cPi:
         self.bus.write_byte_data(0x2c, 0x69, 0xC0)  #set to automatic fan control mode PWM 3 & 4
         '''Assign tmp sensors to each fan'''
         self.bus.write_byte_data(0x2c, 0x7C, 0x12)  #Assign 0x20 TMP sensor to Fan1, 0x21 TMP to Fan2
-        self.bus.write_byte_data(0x2c, 0x7D, 0x12)  #Assign 0x22 TMP sensor to Fan3, 0x23 TMP to Fan4
+        self.bus.write_byte_data(0x2c, 0x7D, 0x34)  #Assign 0x22 TMP sensor to Fan3, 0x23 TMP to Fan4
         '''When temp exceeds Tmin, fan runs at PWMin. Increases to max speed PWMax at Tmin + 20C'''
         self.bus.write_byte_data(0x2c, 0x6E, tmin1)  #Temp Tmin1 register
         self.bus.write_byte_data(0x2c, 0x6F, tmin2)  #Temp Tmin2 register
