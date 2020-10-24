@@ -164,20 +164,20 @@ class i2cPi:
         self.bus.write_byte_data(0x2c, 0x6F, tmin2)  #Temp Tmin2 register
         self.bus.write_byte_data(0x2c, 0x70, tmin3)  #Temp Tmin3 register
         self.bus.write_byte_data(0x2c, 0x71, tmin4)  #Temp Tmin4 register
-        logging.info('Setting min. temp to %s, %s, %s, & %s' %(tmin1, tmin2, tmin3, tmin4))
+        logging.info('Setting min. temp to %sC, %sC, %sC, & %sC' %(tmin1, tmin2, tmin3, tmin4))
         #Sets PWM min duty cycle - will start running @ this duty cycle when Tmin exceeded
         self.bus.write_byte_data(0x2c, 0x6A, pmin1)  #PWM1 min speed register
         self.bus.write_byte_data(0x2c, 0x6B, pmin2)  #PWM2 min speed register
         self.bus.write_byte_data(0x2c, 0x6C, pmin3)  #PWM3 min speed register
         self.bus.write_byte_data(0x2c, 0x6D, pmin4)  #PWM4 min speed register
-        logging.info('Setting min pwm to %s%, %s%, %s%, & %s%' 
+        logging.info('Setting min pwm to %s%%, %s%%, %s%%, & %s%%' 
             %(int(pmin1*.39), int(pmin2*.39), int(pmin3*.39), int(pmin4*.39)))
         #Sets PWM max duty cycle - will start running @ this duty cycle when Tmin exceeded
         self.bus.write_byte_data(0x2c, 0x6A, pmax1)  #PWM1 max speed register
         self.bus.write_byte_data(0x2c, 0x6B, pmax2)  #PWM2 max speed register
         self.bus.write_byte_data(0x2c, 0x6C, pmax3)  #PWM3 max speed register
         self.bus.write_byte_data(0x2c, 0x6D, pmax4)  #PWM4 max speed register
-        logging.info('Setting max pwm to %s%, %s%, %s%, & %s%' 
+        logging.info('Setting max pwm to %s%%, %s%%, %s%%, & %s%%' 
             %(int(pmax1*.39), int(pmax2*.39), int(pmax3*.39), int(pmax4*.39)))
         #Sets PWM max duty cycle - will start running @ this duty cycle when Tmin exceeded
         self.configReg1_defaults(STRT=0, HF_LF=1, T05_STB=1) #config to run monitoring, low freq, & TMPstartpulse        
