@@ -208,14 +208,14 @@ class i2cPi:
             tachMinLowB = 0xff
             tachMinHighB = 0xff
         else:
-            minClock = 5400000 / minRPM    #5.4e6 derives from 90kHz clock * 60 sec/min
+            minClock = int(5400000 / minRPM)    #5.4e6 derives from 90kHz clock * 60 sec/min
             tachMinLowB = minClock & 0xff    #mask off high byte register
             tachMinHighB = (minClock >> 8) & 0xff    #shift off low byte register & shift
         if maxRPM == 'max':
             tachMaxLowB = 0xff
             tachMaxHighB = 0xff
         else:
-            maxClock = 5400000 / maxRPM    #5.4e6 derives from 90kHz clock * 60 sec/min
+            maxClock = int(5400000 / maxRPM)    #5.4e6 derives from 90kHz clock * 60 sec/min
             tachMaxLowB = maxClock & 0xff    #mask off high byte register
             tachMaxHighB = (maxClock >> 8) & 0xff   #shift off low byte register & shift
         '''Read order is low byte, then high byte. A low byte read will FREEZE the high byte register value until both low and high byte are read'''
