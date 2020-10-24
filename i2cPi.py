@@ -100,7 +100,7 @@ class i2cPi:
 
     def setFreq(self, freqRange='low', freqBits=0b111): 
         if freqRange =='low':
-            self.reg1_defaultConfig()   #set low freq + monitoring + temp - range now 11-88.2 hz.
+            self.configReg1_defaults()   #set low freq + monitoring + temp - range now 11-88.2 hz.
             self.validateRegister(0x40, 0x41)
             print('Configured for low frequency PWM, monitoring enabled')
         elif freqRange =='hi':
@@ -133,7 +133,7 @@ class i2cPi:
                 time.sleep(0.1)    #some delay needed for the registry to refresh from stale.
                 readByte = self.bus.read_byte(0x2c, 0x00)
                 self.validateRegister(fanRegister, duty8bit)
-                print('PWM%s Register %s is set to %s hex, aka %s percent' %(fan, hex(fanRegister), hex(readByte), (readByte*0.39)))
+                print('PWM%s Register %s is set to %s hex, i.e. %s percent' %(fan, hex(fanRegister), hex(readByte), (readByte*0.39)))
             else:
                 print('Fan out of range, specify fan #1, 2, 3, or 4')
         except OSError:
@@ -180,9 +180,7 @@ class i2cPi:
         logging.info('Setting max pwm to %s, %s, %s, & %s' 
             %((pmax1*.39), (pmax2*.39), (pmax3*.39), (pmax4*.39)))
         '''Sets PWM max duty cycle - will start running @ this duty cycle when Tmin exceeded'''
-        self.reg1_defaultConfig(STRT=0, HF_LF=1, T05_STB=1) #config to run monitoring, low freq, & TMPstartpulse
-
-        
+        self.configReg1_defaults(STRT=0, HF_LF=1, T05_STB=1) #config to run monitoring, low freq, & TMPstartpulse        
 
     def setTempLimits(self, tempLow = 0x4, tempHigh = 0x50, sensors = 4):
         '''default power-on values is -127C (0x81) & 127C (0x7F)'''
@@ -203,9 +201,9 @@ class i2cPi:
 
     def setTachLimits(self, fan = 1, minRPM = 'min', maxRPM = 'max'):
         #Default register sets min and max at furthest range, so does not trigger SMBALERT
-        '''!INCOMPLETE! - register is 0x58 - 0x67. This register is a bit nasty. 
-        We need to update this register as the fan controller monitor adjusts PWM up and down in response to temperature. 
-        Otherwise, I think these registers will Flag.
+        '''!ALERT! - register is 0x58 - 0x67. This register is a bit nasty. 
+        We need to update this register as the fan controller monitor adjusts PWM up and down in response to temperature, otherwise... these registers may flag.
+        
         Therefore, we need to experimentally map the normal PWM duty cycle, frequency, and tachometer readback in a real use case
         to determine the range in each regime and % tolerance we will allow before SMBus Flags'''
 
@@ -263,7 +261,7 @@ class i2cPi:
             print("Fan #%s is read at rpm %s" %(fan, int(rpm)))
 
     def rbTempN(self, sensorNumber = 4): #polls max temp and N sensors (up to 10)
-        self.reg1_defaultConfig()   #set TMP daisy, set low frequency mode,  set monitoring.
+        self.configReg1_defaults()   #set TMP daisy, set low frequency mode,  set monitoring.
         waitTime = sensorNumber * 0.2   #200 mS / TMP sensor. Max of 10 sensors. 
         print('Waiting for %s seconds to gather TMP05 data' %waitTime)
         time.sleep(waitTime)  #wait 200 mS per TMP sensor, in tester board we have 4. Max of 10, so prob ~2 sec max.
@@ -277,14 +275,13 @@ class i2cPi:
                 count+=1        
         except:
             logging.info('Failed temperature polling')
-        self.reg1_defaultConfig()   #restart monitoring & prior configurations
-
+        self.configReg1_defaults()   #reapply default config
 
     def rbInterrupts(self):
         print('Interrupt Status Register 1: %s' %bin(self.writeRead(0x41)))
         print('Interrupt Status Register 2: %s' %bin(self.writeRead(0x42)))
     
-    def reg1_defaultConfig(self, STRT=0, HF_LF=1, T05_STB=1):
+    def configReg1_defaults(self, STRT=0, HF_LF=1, T05_STB=1):
         '''!-INCOMPLETE-! - change to dynamically take in values instead of hard-set values'''
         self.bus.write_byte_data(0x2c, 0x40, 0xc1)  #config to run monitoring (0), low freq (1), & TMPstartpulse (1)
         self.validateRegister(0x40, 0xc1)
