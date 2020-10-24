@@ -101,11 +101,11 @@ class i2cPi:
     def setFreq(self, freqRange='low', freqBits=0b111): 
         if freqRange =='low':
             self.reg1_defaultConfig()   #set low freq + monitoring + temp - range now 11-88.2 hz.
-            self.checkRegister(0x40, 0x41)
+            self.validateRegister(0x40, 0x41)
             print('Configured for low frequency PWM, monitoring enabled')
         elif freqRange =='hi':
             self.bus.write_byte(0x2c, 0x40, 0x81)   #set high freq + monitoring + temp
-            self.checkRegister(0x40, 0x41)
+            self.validateRegister(0x40, 0x41)
             print('Configured for high frequency PWM, monitoring enabled')
         else:
             print('Nonvalid entry for freq range, enter low or hi')
@@ -113,13 +113,13 @@ class i2cPi:
         currentVal = self.bus.read_byte(0x2c, 0x74)
         freqBits = freqBits << 3 | currentVal    #freqBits pos [6:4], bitshift 3 to left, insert into current register values
         self.bus.write_byte_data(0x2c, 0x74, freqBits)  #hard set 88.2Hz if freq=7 by setting config reg 2 0x74[6:4] bits to 111 - MAKE SURE IN register 0x40 is in LOW FREQ MODE before changing to avoid fan damage.
-        self.checkRegister(0x74, 0x70)
+        self.validateRegister(0x74, 0x70)
 
     def setPulsesPerRev(self, fan=1, pulseRev = 2):
         '''!!!INCOMPLETE!!!! Want this function to allow configuration per fan, currently hardsets all 4 to 2 pulsese / revolution'''
         # bits assignment for each pulse per rev: 00=1, 01=2, 10=3, 11=4
         self.bus.write_byte_data(0x2c, 0x43, 0x55)  #!!!HARDSET!!! - 2 pulses / rev
-        self.checkRegister(0x43, 0x55)
+        self.validateRegister(0x43, 0x55)
         print("Configured Fan1-4 for 2 pulses per revolution")
 
     def setPWM(self, fan=1, dutyCycle=100): #selects fan and controls duty cycle from 0-100%
@@ -132,7 +132,7 @@ class i2cPi:
                 self.bus.write_byte_data(0x2c, fanRegister, duty8bit) #set PWM for fan
                 time.sleep(0.1)    #some delay needed for the registry to refresh from stale.
                 readByte = self.bus.read_byte(0x2c, 0x00)
-                self.checkRegister(fanRegister, duty8bit)
+                self.validateRegister(fanRegister, duty8bit)
                 print('PWM%s Register %s is set to %s hex, aka %s percent' %(fan, hex(fanRegister), hex(readByte), (readByte*0.39)))
             else:
                 print('Fan out of range, specify fan #1, 2, 3, or 4')
@@ -140,6 +140,13 @@ class i2cPi:
             logging.info('Error 121 - Remote I/O Error on address 0x2c while writing fanPWM')
 
     '''tmin range: 0-255 degrees, pmin & pmax: 0-255 for 0-100% - reference pg.26 of ADT740 for instructions'''
+
+    def setManualMode(self):
+        self.bus.write_byte_data(0x2c, 0x68, 0x00)  #set to automatic fan control mode PWM 1 & 2
+        self.validateRegister(0x68, 0x00)
+        self.bus.write_byte_data(0x2c, 0x69, 0x00)  #set to automatic fan control mode PWM 3 & 4
+        self.validateRegister(0x69, 0x00)
+        logging.info('Re-configured to manual fan control behavior for PWM1-4')
 
     def setAutoMonitor(self, 
     tmin1=25, tmin2=25, tmin3=25, tmin4=25, 
@@ -174,6 +181,8 @@ class i2cPi:
             %((pmax1*.39), (pmax2*.39), (pmax3*.39), (pmax4*.39)))
         '''Sets PWM max duty cycle - will start running @ this duty cycle when Tmin exceeded'''
         self.reg1_defaultConfig(STRT=0, HF_LF=1, T05_STB=1) #config to run monitoring, low freq, & TMPstartpulse
+
+        
 
     def setTempLimits(self, tempLow = 0x4, tempHigh = 0x50, sensors = 4):
         '''default power-on values is -127C (0x81) & 127C (0x7F)'''
@@ -278,10 +287,10 @@ class i2cPi:
     def reg1_defaultConfig(self, STRT=0, HF_LF=1, T05_STB=1):
         '''!-INCOMPLETE-! - change to dynamically take in values instead of hard-set values'''
         self.bus.write_byte_data(0x2c, 0x40, 0xc1)  #config to run monitoring (0), low freq (1), & TMPstartpulse (1)
-        self.checkRegister(0x40, 0xc1)
+        self.validateRegister(0x40, 0xc1)
         print('Config Register 1 bits set - STRT: %s HF_LF: %s T05_STB: %s' %(STRT, HF_LF, T05_STB))
 
-    def checkRegister(self, wantedReg, wantedVal):  #assumes a prior write has been performed so pointer address previously set
+    def validateRegister(self, wantedReg, wantedVal):  #assumes a prior write has been performed so pointer address previously set
         readback = self.bus.read_byte(0x2c, 0x00)
         if wantedVal == readback:
             print('Register %s value check: (%s, %s, 0d%s)' %(hex(wantedReg), hex(wantedVal), bin(wantedVal), wantedVal))
