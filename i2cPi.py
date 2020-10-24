@@ -192,9 +192,38 @@ class i2cPi:
         except:
             logging.info('Failed to set')
 
-    def setTachLimits(self, tachMinLowB, tachMinHighB, tachMaxLowB, tachMaxHighB):
-        #Default value sets min and max at furthest range, so does not trigger SMBALERT
-        '''!INCOMPLETE! - register is 0x58 - 0x67. This register is a bit nasty, as we have to know map the relationship between normal PWM duty cycle, frequency, and tachometer readback and adjust this TachLimit as the automatic fan controller adjusts PWM up and down in response to temperature. Otherwise, I think these registers will Flag.'''
+    def setTachLimits(self, fan = 1, minRPM, maxRPM):
+        #Default register sets min and max at furthest range, so does not trigger SMBALERT
+        '''!INCOMPLETE! - register is 0x58 - 0x67. This register is a bit nasty. 
+        We need to update this register as the fan controller monitor adjusts PWM up and down in response to temperature. 
+        Otherwise, I think these registers will Flag.
+        Therefore, we need to experimentally map the normal PWM duty cycle, frequency, and tachometer readback in a real use case
+        to determine the range in each regime and % tolerance we will allow before SMBus Flags'''
+
+        hexMinAddLow = 0x58+(2*(fan-1))
+        hexMinAddHigh = 0x59+(2*(fan-1))
+        hexMaxAddLow = 0x60+(2*(fan-1))
+        hexMaxAddHigh = 0x61+(2*(fan-1))
+        minClock = 5400000 / minRPM    #5.4e6 derives from 90kHz clock * 60 sec/min
+        tachMinLowB = minClock & 0xff    #mask off high byte register
+        tachMinHighB = (minClock >> 8) & 0xff    #shift off low byte register & shift
+        maxClock = 5400000 / maxRPM    #5.4e6 derives from 90kHz clock * 60 sec/min
+        tachMaxLowB = maxClock & 0xff    #mask off high byte register
+        tachMaxHighB = (maxClock >> 8) & 0xff   #shift off low byte register & shift
+
+        '''Read order is low byte, then high byte. A low byte read will FREEZE the high byte register value until both low and high byte are read'''
+        self.bus.write_byte_data(0x2c, hexMinAddLow, tachMinLowB)
+        self.bus.write_byte_data(0x2c, hexMinAddHigh, tachMinHighB)  
+        self.bus.write_byte_data(0x2c, hexMaxAddLow, tachMaxLowB)  
+        self.bus.write_byte_data(0x2c, hexMaxAddHigh, tachMaxHighB)      
+        logging.info('Configured Fan %s - Min Low Byte Register %s value to expected: %s, got %s.' 
+            %(fan, hex(hexMinAddLow), hex(tachMinLowB), hex(self.writeRead(hexMinAddLow))))
+        logging.info('Configured Fan %s - Min High Byte Register %s value expected: %s, got %s.' 
+            %(fan, hex(hexMinAddHigh), hex(tachMinHighB), hex(self.writeRead(hexMinAddHigh))))
+        logging.info('Configured Fan %s - Max Low Byte Register %s value expected: %s, got %s.' 
+            %(fan, hex(hexMaxAddLow), hex(tachMaxLowB), hex(self.writeRead(hexMaxAddLow))))
+        logging.info('Configured Fan %s - Max High Byte Register %s value expected: %s, got %s.' 
+            %(fan, hex(hexMaxAddHigh), hex(tachMaxHighB), hex(self.writeRead(hexMaxAddHigh))))
 
     def rbPWM(self):
         for fanRegister in [0x32, 0x33, 0x34, 0x35]:
@@ -215,7 +244,7 @@ class i2cPi:
             print('Fan Error! PWM @ 0%, stalled, blocked, failed, or unpopulated')
         else:
             rpm = 5400000 / highlowbyte   #5400000 is from 90kHz clock * 60 sec
-            print("Fan #%s is read at rpm %s" %(fan, rpm))
+            print("Fan #%s is read at rpm %s" %(fan, int(rpm)))
 
     def rbTempN(self, sensorNumber = 4): #polls max temp and N sensors (up to 10)
         self.reg1_defaultConfig()   #set TMP daisy, set low frequency mode,  set monitoring.
