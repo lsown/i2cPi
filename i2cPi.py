@@ -192,7 +192,7 @@ class i2cPi:
         except:
             logging.info('Failed to set')
 
-    def setTachLimits(self, fan = 1, minRPM, maxRPM):
+    def setTachLimits(self, fan = 1, minRPM = 'min', maxRPM = 'max'):
         #Default register sets min and max at furthest range, so does not trigger SMBALERT
         '''!INCOMPLETE! - register is 0x58 - 0x67. This register is a bit nasty. 
         We need to update this register as the fan controller monitor adjusts PWM up and down in response to temperature. 
@@ -204,13 +204,20 @@ class i2cPi:
         hexMinAddHigh = 0x59+(2*(fan-1))
         hexMaxAddLow = 0x60+(2*(fan-1))
         hexMaxAddHigh = 0x61+(2*(fan-1))
-        minClock = 5400000 / minRPM    #5.4e6 derives from 90kHz clock * 60 sec/min
-        tachMinLowB = minClock & 0xff    #mask off high byte register
-        tachMinHighB = (minClock >> 8) & 0xff    #shift off low byte register & shift
-        maxClock = 5400000 / maxRPM    #5.4e6 derives from 90kHz clock * 60 sec/min
-        tachMaxLowB = maxClock & 0xff    #mask off high byte register
-        tachMaxHighB = (maxClock >> 8) & 0xff   #shift off low byte register & shift
-
+        if minRPM == 'min':
+            tachMinLowB = 0xff
+            tachMinHighB = 0xff
+        else:
+            minClock = 5400000 / minRPM    #5.4e6 derives from 90kHz clock * 60 sec/min
+            tachMinLowB = minClock & 0xff    #mask off high byte register
+            tachMinHighB = (minClock >> 8) & 0xff    #shift off low byte register & shift
+        if maxRPM == 'max':
+            tachMaxLowB = 0xff
+            tachMaxHighB = 0xff
+        else:
+            maxClock = 5400000 / maxRPM    #5.4e6 derives from 90kHz clock * 60 sec/min
+            tachMaxLowB = maxClock & 0xff    #mask off high byte register
+            tachMaxHighB = (maxClock >> 8) & 0xff   #shift off low byte register & shift
         '''Read order is low byte, then high byte. A low byte read will FREEZE the high byte register value until both low and high byte are read'''
         self.bus.write_byte_data(0x2c, hexMinAddLow, tachMinLowB)
         self.bus.write_byte_data(0x2c, hexMinAddHigh, tachMinHighB)  
