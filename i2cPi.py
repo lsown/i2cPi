@@ -173,14 +173,14 @@ class i2cPi:
         logging.info('Setting min pwm to %s%%, %s%%, %s%%, & %s%%' 
             %(int(pmin1*.39), int(pmin2*.39), int(pmin3*.39), int(pmin4*.39)))
         #Sets PWM max duty cycle - will start running @ this duty cycle when Tmin exceeded
-        self.bus.write_byte_data(0x2c, 0x6A, pmax1)  #PWM1 max speed register
-        self.bus.write_byte_data(0x2c, 0x6B, pmax2)  #PWM2 max speed register
-        self.bus.write_byte_data(0x2c, 0x6C, pmax3)  #PWM3 max speed register
-        self.bus.write_byte_data(0x2c, 0x6D, pmax4)  #PWM4 max speed register
+        self.bus.write_byte_data(0x2c, 0x38, pmax1)  #PWM1 max speed register
+        self.bus.write_byte_data(0x2c, 0x39, pmax2)  #PWM2 max speed register
+        self.bus.write_byte_data(0x2c, 0x3A, pmax3)  #PWM3 max speed register
+        self.bus.write_byte_data(0x2c, 0x3B, pmax4)  #PWM4 max speed register
         logging.info('Setting max pwm to %s%%, %s%%, %s%%, & %s%%' 
             %(int(pmax1*.39), int(pmax2*.39), int(pmax3*.39), int(pmax4*.39)))
         #Sets PWM max duty cycle - will start running @ this duty cycle when Tmin exceeded
-        self.configReg1_defaults(STRT=0, HF_LF=1, T05_STB=1) #config to run monitoring, low freq, & TMPstartpulse        
+        self.configReg1_defaults() #config to run monitoring, low freq, & TMPstartpulse        
 
     def setTempLimits(self, tempLow = 0x4, tempHigh = 0x50, sensors = 4):
         '''default power-on values is -127C (0x81) & 127C (0x7F)'''
@@ -219,8 +219,8 @@ class i2cPi:
             tachMinLowB = minClock & 0xff    #mask off high byte register
             tachMinHighB = (minClock >> 8) & 0xff    #shift off low byte register & shift
         if maxRPM == 'max':
-            tachMaxLowB = 0xff
-            tachMaxHighB = 0xff
+            tachMaxLowB = 0x00
+            tachMaxHighB = 0x00
         else:
             maxClock = int(5400000 / maxRPM)    #5.4e6 derives from 90kHz clock * 60 sec/min
             tachMaxLowB = maxClock & 0xff    #mask off high byte register
@@ -238,6 +238,7 @@ class i2cPi:
             %(fan, hex(hexMaxAddLow), hex(tachMaxLowB), hex(self.writeRead(hexMaxAddLow))))
         logging.info('Configured Fan %s - Max High Byte Register %s value expected: %s, got %s.' 
             %(fan, hex(hexMaxAddHigh), hex(tachMaxHighB), hex(self.writeRead(hexMaxAddHigh))))
+        logging.info('Configured tach range to %s - %s' %(minRPM, maxRPM))
 
     def rbPWM(self):
         for fanRegister in [0x32, 0x33, 0x34, 0x35]:
@@ -280,7 +281,36 @@ class i2cPi:
     def rbInterrupts(self):
         print('Interrupt Status Register 1: %s' %bin(self.writeRead(0x41)))
         print('Interrupt Status Register 2: %s' %bin(self.writeRead(0x42)))
-    
+
+    def rbAutoMonitor(self):
+        '''Configure to automatic fan control in PWM1/2 & PWM3/4 registers'''
+        self.bus.write_byte_data(0x2c, 0x68, 0xC0)  #set to automatic fan control mode PWM 1 & 2
+        self.bus.write_byte_data(0x2c, 0x69, 0xC0)  #set to automatic fan control mode PWM 3 & 4
+        logging.info('Configuring to automatic fan control behavior for PWM1-4')
+        #Assign tmp sensors to each fan
+        self.bus.write_byte_data(0x2c, 0x7C, 0x12)  #Assign 0x20 TMP sensor to Fan1, 0x21 TMP to Fan2
+        self.bus.write_byte_data(0x2c, 0x7D, 0x34)  #Assign 0x22 TMP sensor to Fan3, 0x23 TMP to Fan4
+        #When temp exceeds Tmin, fan runs at PWMin. Increases to max speed PWMax at Tmin + 20C
+        self.bus.write_byte_data(0x2c, 0x6E, tmin1)  #Temp Tmin1 register
+        self.bus.write_byte_data(0x2c, 0x6F, tmin2)  #Temp Tmin2 register
+        self.bus.write_byte_data(0x2c, 0x70, tmin3)  #Temp Tmin3 register
+        self.bus.write_byte_data(0x2c, 0x71, tmin4)  #Temp Tmin4 register
+        logging.info('Setting min. temp to %sC, %sC, %sC, & %sC' %(tmin1, tmin2, tmin3, tmin4))
+        #Sets PWM min duty cycle - will start running @ this duty cycle when Tmin exceeded
+        self.bus.write_byte_data(0x2c, 0x6A, pmin1)  #PWM1 min speed register
+        self.bus.write_byte_data(0x2c, 0x6B, pmin2)  #PWM2 min speed register
+        self.bus.write_byte_data(0x2c, 0x6C, pmin3)  #PWM3 min speed register
+        self.bus.write_byte_data(0x2c, 0x6D, pmin4)  #PWM4 min speed register
+        logging.info('Setting min pwm to %s%%, %s%%, %s%%, & %s%%' 
+            %(int(pmin1*.39), int(pmin2*.39), int(pmin3*.39), int(pmin4*.39)))
+        #Sets PWM max duty cycle - will start running @ this duty cycle when Tmin exceeded
+        self.bus.write_byte_data(0x2c, 0x38, pmax1)  #PWM1 max speed register
+        self.bus.write_byte_data(0x2c, 0x39, pmax2)  #PWM2 max speed register
+        self.bus.write_byte_data(0x2c, 0x3A, pmax3)  #PWM3 max speed register
+        self.bus.write_byte_data(0x2c, 0x3B, pmax4)  #PWM4 max speed register
+        logging.info('Setting max pwm to %s%%, %s%%, %s%%, & %s%%' 
+            %(int(pmax1*.39), int(pmax2*.39), int(pmax3*.39), int(pmax4*.39)))
+
     def configReg1_defaults(self, STRT=0, HF_LF=1, T05_STB=1):
         '''!-INCOMPLETE-! - change to dynamically take in values instead of hard-set values'''
         self.bus.write_byte_data(0x2c, 0x40, 0xc1)  #config to run monitoring (0), low freq (1), & TMPstartpulse (1)
