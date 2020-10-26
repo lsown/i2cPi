@@ -190,15 +190,15 @@ class i2cPi:
         bitMaskList = [0b1, 0b11, 0b111, 0b1111, 0b11111, 0b111111, 0b1111111] #mask list for masking bits 0-6
         currentReg = self.writeRead(regAddress)
         bitEndtoHi = (currentReg >> posHi) << posHi
-        logging.info('bit[7:%s] is %s' %(posHi, bin(bitEndtoHi)))
+        logging.info('Hi bit[7:%s] from currentReg is %s' %(posHi, bin(bitEndtoHi)))
         bitMask = bitMaskList[posLow-1]
         logging.info('Low bitmask applied is %s' %bin(bitMask))
         bitLowtoEnd = bitMask & currentReg
-        logging.info('bit[%s:0] is %s' %(posLow, bin(bitLowtoEnd)))
+        logging.info('Low bit[%s:0] from currentReg is %s' %(posLow, bin(bitLowtoEnd)))
         bitEnds = bitEndtoHi | bitLowtoEnd
-        logging.info('bitends is %s' %bin(bitEnds))
+        logging.info('Applied final mask is %s' %bin(bitEnds))
         byteLoad = payLoad << posLow | bitEnds
-        logging.info('byteload is %s' %bin(byteLoad))
+        logging.info('Final byteload with insertion is %s' %bin(byteLoad))
         return byteLoad
 
     def setManualMode(self):
