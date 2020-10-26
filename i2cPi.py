@@ -115,13 +115,6 @@ class i2cPi:
         self.bus.write_byte_data(0x2c, 0x74, freqBits)  #hard set 88.2Hz if freq=7 by setting config reg 2 0x74[6:4] bits to 111 - MAKE SURE IN register 0x40 is in LOW FREQ MODE before changing to avoid fan damage.
         self.validateRegister(0x74, 0x70)
 
-    def setPulsesPerRev(self, fan=1, pulseRev = 2):
-        '''!!!INCOMPLETE!!!! Want this function to allow configuration per fan, currently hardsets all 4 to 2 pulsese / revolution'''
-        # bits assignment for each pulse per rev: 00=1, 01=2, 10=3, 11=4
-        self.bus.write_byte_data(0x2c, 0x43, 0x55)  #!!!HARDSET!!! - 2 pulses / rev
-        self.validateRegister(0x43, 0x55)
-        print("Configured Fan1-4 for 2 pulses per revolution")
-
     def setPWM(self, fan=1, dutyCycle=100): #selects fan and controls duty cycle from 0-100%
         try:
             duty8bit = int(dutyCycle/0.39)  #0.39 is the conversion factor from % to bits.
@@ -140,6 +133,26 @@ class i2cPi:
             logging.info('Error 121 - Remote I/O Error on address 0x2c while writing fanPWM')
 
     '''tmin range: 0-255 degrees, pmin & pmax: 0-255 for 0-100% - reference pg.26 of ADT740 for instructions'''
+
+    def setPulsesPerRev(self, fan='all', pulseRev = 2):
+        '''!!!INCOMPLETE!!!! Want this function to allow configuration per fan, currently hardsets all 4 to 2 pulsese / revolution'''
+        # bits assignment for each pulse per rev: 00=1, 01=2, 10=3, 11=4
+        pulseCodeList = [0b00, 0b01, 0b10, 0b11]    #1, 2, 3, or 4 pulses / rev
+        pulseCode = pulseCodeList[fan-1] #translate fan number to pulseRev code
+        currentPulseReg = self.writeRead(0x43)
+        if fan == 1:
+            writeRegVal = pulseCode | currentPulseReg
+        elif fan ==2:
+            writeRegVal = (pulseCode << 2) | currentPulseReg
+        elif fan == 3:
+            writeRegVal = (pulseCode << 4) | currentPulseReg
+        elif fan == 3:
+            writeRegVal = (pulseCode << 6) | currentPulseReg
+        elif fan == 'all':
+            writeRegVal = (pulseCode) | (pulseCode << 2) | (pulseCode << 4) | (pulseCode << 6)
+        self.bus.write_byte_data(0x2c, 0x43, writeRegVal)  #!!!HARDSET!!! - 2 pulses / rev
+        self.validateRegister(0x43, writeRegVal)
+        print("Configured Fan %s for %s pulses per revolution" %(fan, pulseRev))
 
     def setManualMode(self):
         self.bus.write_byte_data(0x2c, 0x68, 0x00)  #set to automatic fan control mode PWM 1 & 2
