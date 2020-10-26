@@ -107,34 +107,29 @@ class i2cPi:
         self.setFreq()  #configure low frequency mode, monitoring, & 88.2 Hz
         self.setPPRev() #configures pulses per RPM
 
-    def setFreq(self, freqRange='low', freqBits=0b111): 
+    def setFreq(self, freqRange='low', freqBits=0b111, fanType = '3-wire'): 
         """Sets frequency range for fan specified"""
-        if freqRange =='low':
-            self.configReg1_defaults()   #set low freq + monitoring + temp - range now 11-88.2 hz.
-            self.validateRegister(0x40, 0x41)
-            print('Configured for low frequency PWM, monitoring enabled')
+        lowFreqDict = {0b000:11, 0b001: 14.7, 0b010: 22.1, 0b011: 29.4, 0b100:35.3, 0b101:44.1, 0b110:58.8, 0b111:88.2} #bit code for low frequency in Hz
+        hiFreqDict = {0b000:1.4, 0b001: 22.5, 0b010: 22.5, 0b011: 22.5, 0b100:22.5, 0b101:22.5, 0b110:22.5, 0b111:22.5} #bit code for hi frequency in kHz
+        if (freqRange =='hi' and (freqBits > 0) and (fanType == '3-wire' or fanType == '2-wire')):
+            print('Invalid configuration, can only run 4-wire at 22.5 kHz')
+        elif freqRange =='low':
+            writeRegVal = self.insertBits(0x40, 6, 6, 0b1)
+            self.validateRegister(0x40, writeRegVal)
+            logging.info('Configured for low frequency PWM')
         elif freqRange =='hi':
-            self.bus.write_byte(0x2c, 0x40, 0x81)   #set high freq + monitoring + temp
-            self.validateRegister(0x40, 0x41)
-            print('Configured for high frequency PWM, monitoring enabled')
+            writeRegVal = self.insertBits(0x40, 6, 6, 0b0)
+            self.validateRegister(0x40, writeRegVal)
+            logging.info('Configured for high frequency PWM')
         else:
             print('Nonvalid entry for freq range, enter low or hi')
-        '''below is to create bookends for inserting freqBits'''
         writeRegVal = self.insertBits(0x74, 6, 4, freqBits)
         self.bus.write_byte_data(0x2c, 0x74, writeRegVal)
         self.validateRegister(0x74, writeRegVal)
-        '''
-        currentVal = self.writeRead(0x74)   #get current register
-        bit7 = (currentVal >> 7) << 7   #remove bits 6:0, grab bit 7
-        logging.info('bit7 is %s' %bin(bit7))
-        bit0to3 = 0b1111 & currentVal   #mask off to grab bits 3:0
-        logging.info('bit0to3 is %s' %bin(bit0to3))
-        bitEnds = bit7 | bit0to3    #combine bit 7 and bits 0-3, leaving bits 6-4 empty
-        logging.info('bitEnds is %s' %bin(bitEnds))
-        freqBits = freqBits << 3 | bitEnds    #freqBits pos [6:4], bitshift 3 to left, insert into current register values
-        self.bus.write_byte_data(0x2c, 0x74, freqBits)  #hard set 88.2Hz if freq=7 by setting config reg 2 0x74[6:4] bits to 111 - MAKE SURE IN register 0x40 is in LOW FREQ MODE before changing to avoid fan damage.
-        self.validateRegister(0x74, freqBits)
-        '''
+        if freqRange =='low':
+            print('Configured %s Hz for %s frequency PWM' %(lowFreqDict[freqBits], freqRange))
+        elif freqRange =='hi':
+            print('Configured %s kHz for %s frequency PWM' %(hiFreqDict[freqBits], freqRange))
 
     def setPWM(self, fan=1, dutyCycle=100): 
         """Sets duty cycle from 0-100% for fan specified"""
