@@ -189,6 +189,7 @@ class i2cPi:
         '''insertHi & insertLow are bit positions'''
         bitMaskList = [0b1, 0b11, 0b111, 0b1111, 0b11111, 0b111111, 0b1111111] #mask list for masking bits 0-6
         currentReg = self.writeRead(regAddress)
+        posHi = posHi + 1   #shift it up by one
         bitEndtoHi = (currentReg >> posHi) << posHi
         logging.info('Hi bit[7:%s] from currentReg is %s' %(posHi, bin(bitEndtoHi)))
         bitMask = bitMaskList[posLow-1]
