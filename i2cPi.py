@@ -110,14 +110,16 @@ class i2cPi:
             print('Configured for high frequency PWM, monitoring enabled')
         else:
             print('Nonvalid entry for freq range, enter low or hi')
-        currentVal = self.writeRead(0x74)
-        currentValHi = (currentVal >> 7) << 7
-        logging.info('CurrentValHi is %s' %bin(currentValHi))
-        currentValLow = 0b1111 & currentVal
-        logging.info('CurrentValLow is %s' %bin(currentValLow))
-        currentValHiLow = currentValHi | currentValLow
-        logging.info('currentValHiLow is %s' %bin(currentValHiLow))
-        freqBits = freqBits << 3 | currentValHiLow    #freqBits pos [6:4], bitshift 3 to left, insert into current register values
+        '''below is to create bookends for inserting freqBits'''
+        currentVal = self.writeRead(0x74)   #get current register
+        bit7 = (currentVal >> 7) << 7   #remove bits 6:0, grab bit 7
+        logging.info('bit7 is %s' %bin(bit7))
+        bit0to3 = 0b1111 & currentVal   #mask off to grab bits 3:0
+        logging.info('bit0to3 is %s' %bin(bit0to3))
+        bitEnds = bit7 | bit0to3    #combine bit 7 and bits 0-3, leaving bits 6-4 empty
+        logging.info('bitEnds is %s' %bin(bitEnds))
+        freqBits = freqBits << 3 | bitEnds    #freqBits pos [6:4], bitshift 3 to left, insert into current register values
+
         self.bus.write_byte_data(0x2c, 0x74, freqBits)  #hard set 88.2Hz if freq=7 by setting config reg 2 0x74[6:4] bits to 111 - MAKE SURE IN register 0x40 is in LOW FREQ MODE before changing to avoid fan damage.
         self.validateRegister(0x74, freqBits)
 
@@ -143,29 +145,47 @@ class i2cPi:
 
     def setPPRev(self, fan='all', pulseRev = 2):
         '''!!!INCOMPLETE!!!! Want this function to allow configuration per fan, currently hardsets all 4 to 2 pulsese / revolution'''
-        # bits assignment for each pulse per rev: 00=1, 01=2, 10=3, 11=4
-        '''In progress
+        # bits assignment for each pulse per rev: 00=1, 01=2, 10=3, 11=4        
         pulseCodeList = [0b00, 0b01, 0b10, 0b11]    #1, 2, 3, or 4 pulses / rev
         pulseCode = pulseCodeList[fan-1] #translate fan number to pulseRev code
         currentPulseReg = self.writeRead(0x43)
         if fan == 1:
             writeRegVal = pulseCode & currentPulseReg
         elif fan ==2:
-            firstTwo = currentPulseReg & 0b11111111
-            writeRegVal = (pulseCode << 2) & currentPulseReg >> 2
+            bit7to4 = (currentPulseReg >> 4) << 4
+            logging.info('bit[7:4] is %s' %bin(bit7to4))
+            bit0to1 = 0b11 & currentPulseReg   #mask off to grab bits 3:0
+            logging.info('bit[0:1] is %s' %bin(bit0to1))
+            bitEnds = bit7to4 | bit0to1    #combine bit 7 and bits 0-3, leaving bits 6-4 empty
+            logging.info('bitEnds is %s' %bin(bitEnds))
+            writeRegVal = (pulseCode << 2) & bitEnds
         elif fan == 3:
-            writeRegVal = (pulseCode << 4) | currentPulseReg
-        elif fan == 3:
-            writeRegVal = (pulseCode << 6) | currentPulseReg
+            bit7to6 = (currentPulseReg >> 6) << 6
+            logging.info('bit[7:6] is %s' %bin(bit7to6))
+            bit0to3 = 0b1111 & currentPulseReg   #mask off to grab bits 3:0
+            logging.info('bit[0:3] is %s' %bin(bit0to3))
+            bitEnds = bit7to6 | bit0to3    #combine bit 7 and bits 0-3, leaving bits 6-4 empty
+            logging.info('bitEnds is %s' %bin(bitEnds))
+            writeRegVal = (pulseCode << 4) & bitEnds
+        elif fan == 4:
+            bit9to7 = (currentPulseReg >> 8) << 8
+            logging.info('bit[9:7] is %s' %bin(bit9to7))
+            bit0to5 = 0b111111 & currentPulseReg   #mask off to grab bits 3:0
+            logging.info('bit[0:3] is %s' %bin(bit0to5))
+            bitEnds = bit9to7 | bit0to5    #combine bit 7 and bits 0-3, leaving bits 6-4 empty
+            logging.info('bitEnds is %s' %bin(bitEnds))
+            writeRegVal = (pulseCode << 6) & bitEnds
         elif fan == 'all':
             writeRegVal = (pulseCode) | (pulseCode << 2) | (pulseCode << 4) | (pulseCode << 6)
         self.bus.write_byte_data(0x2c, 0x43, writeRegVal)  #!!!HARDSET!!! - 2 pulses / rev
         self.validateRegister(0x43, writeRegVal)
-        print("Configured Fan %s for %s pulses per revolution" %(fan, pulseRev))
-        '''
-        self.bus.write_byte_data(0x2c, 0x43, 0x55)  #!!!HARDSET!!! - 2 pulses / rev
-        self.validateRegister(0x43, 0x55)
-        print("Configured Fan 1-4 for %s pulses per revolution" %(fan, pulseRev))
+        print("Configured Fan %s for %s pulses per revolution" %(fan, pulseRev))        
+
+    def bitEnds(self, register, insertHi, insertLow):
+        currentReg = self.writeRead(register)
+        highBits = 7 - insertHi
+        lowBits = insertLow
+        bit7toHi = (currentReg >> insertHi) << insertHi
 
     def setManualMode(self):
         self.bus.write_byte_data(0x2c, 0x68, 0x00)  #set to automatic fan control mode PWM 1 & 2
