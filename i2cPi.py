@@ -103,9 +103,16 @@ class i2cPi:
         self.bus.write_byte_data(0x2c, 0x74, self.insertBits(0x74, 7, 7, payLoad))
         print('ADT7470 configured to %s , %s set on bit 7 of register 0x74' %(wantedState, bin(payLoad)))
 
-    def configFansGlobal(self, freqRange = "low", freqBits = 0b111, fanType='3-wire', fan='all', pulseRev = 2):    
+    def configFansGlobal(self, 
+    freqRange = "low", freqBits = 0b111, fanType='3-wire', fan_PPRev='all', pulseRev = 2,
+    tempLow = 0x4, tempHigh = 0x50, sensors = 4,
+    minRPM = 'min', maxRPM = 'max'
+    ):    
         self.setFreq(freqRange, freqBits, fanType)  #configure low frequency mode, monitoring, & 88.2 Hz
-        self.setPPRev(fan, pulseRev) #configures pulses per RPM
+        self.setPPRev(fan_PPRev, pulseRev) #configures pulses per RPM
+        self.setTempLimitsGlobal(tempLow, tempHigh, sensors)    #configures all 4 temp limits
+        self.setTachLimitsGlobal(minRPM, maxRPM)    #Calls .setTachLimits for each fan
+
 
     def setFreq(self, freqRange='low', freqBits=0b111, fanType = '3-wire'): 
         """Sets global frequency range for fans. Configures 2 registers, specifying low or hi frequency (0x40), and speed (0x74) in low frequency mode. Configures speed for lowest common denominator fan."""
@@ -116,19 +123,21 @@ class i2cPi:
             print('Invalid configuration, can only run 4-wire at 22.5 kHz. Exiting.')
             return None
         elif freqRange =='low':
-            writeRegVal = self.insertBits(0x40, 6, 6, 0b1)
-            self.validateRegister(0x40, writeRegVal)
+            newRegVal = self.insertBits(0x40, 6, 6, 0b1)
+            self.bus.write_byte_data(0x2c, 0x40, newRegVal)
+            self.validateRegister(0x40, newRegVal)
             print('Configured for low frequency PWM')
         elif freqRange =='hi':
-            writeRegVal = self.insertBits(0x40, 6, 6, 0b0)
-            self.validateRegister(0x40, writeRegVal)
+            newRegVal = self.insertBits(0x40, 6, 6, 0b0)
+            self.bus.write_byte_data(0x2c, 0x40, newRegVal)
+            self.validateRegister(0x40, newRegVal)
             print('Configured for high frequency PWM')
         else:
             print('Nonvalid entry for freq range, enter low or hi')
             return None #escape out of function before setting the frequency registry
-        writeRegVal = self.insertBits(0x74, 6, 4, freqBits)
-        self.bus.write_byte_data(0x2c, 0x74, writeRegVal)
-        self.validateRegister(0x74, writeRegVal)
+        newRegVal = self.insertBits(0x74, 6, 4, freqBits)
+        self.bus.write_byte_data(0x2c, 0x74, newRegVal)
+        self.validateRegister(0x74, newRegVal)
         if freqRange =='low':
             print('Configured %s Hz for %s frequency PWM' %(lowFreqDict[freqBits], freqRange))
         elif freqRange =='hi':
@@ -158,17 +167,17 @@ class i2cPi:
         pulseCodeList = [0b00, 0b01, 0b10, 0b11]    #1, 2, 3, or 4 pulses / rev
         pulseCode = pulseCodeList[pulseRev-1] #translate fan number to pulseRev code
         if fan == 'all':
-            writeRegVal = (pulseCode) | (pulseCode << 2) | (pulseCode << 4) | (pulseCode << 6)
+            newRegVal = (pulseCode) | (pulseCode << 2) | (pulseCode << 4) | (pulseCode << 6)
         elif fan == 1:
-            writeRegVal = self.insertBits(0x43, 1, 0, pulseCode)
+            newRegVal = self.insertBits(0x43, 1, 0, pulseCode)
         elif fan == 2:
-            writeRegVal = self.insertBits(0x43, 3, 2, pulseCode)
+            newRegVal = self.insertBits(0x43, 3, 2, pulseCode)
         elif fan == 3:
-            writeRegVal = self.insertBits(0x43, 5, 4, pulseCode)
+            newRegVal = self.insertBits(0x43, 5, 4, pulseCode)
         elif fan == 4:
-            writeRegVal = self.insertBits(0x43, 7, 6, pulseCode)
-        self.bus.write_byte_data(0x2c, 0x43, writeRegVal)  #
-        self.validateRegister(0x43, writeRegVal)
+            newRegVal = self.insertBits(0x43, 7, 6, pulseCode)
+        self.bus.write_byte_data(0x2c, 0x43, newRegVal) 
+        self.validateRegister(0x43, newRegVal)
         print("Configured Fan %s for %s pulses per revolution" %(fan, pulseRev))        
 
     def setManualModeAll(self):
@@ -212,11 +221,28 @@ class i2cPi:
         self.bus.write_byte_data(0x2c, 0x3B, pmax4)  #PWM4 max speed register
         logging.info('Setting max pwm to %s%%, %s%%, %s%%, & %s%%' 
             %(int(pmax1*.39), int(pmax2*.39), int(pmax3*.39), int(pmax4*.39)))
-        #Sets PWM max duty cycle - will start running @ this duty cycle when Tmin exceeded
-        self.bus.write_byte_data(0x2c, 0x40, self.insertBits(0x40, 0, 0, 0b1))  #configure to STRT monitoring & PWM control based on limits
+        self.bus.write_byte_data(0x2c, 0x40, self.insertBits(0x40, 0, 0, 0b1))  #configure to STRT monitoring & auto fan control based on limits
         self.bus.write_byte_data(0x2c, 0x40, self.insertBits(0x40, 7, 7, 0b1))  #configure to initiate TMP pulse
+        logging.info('Configured to start monitoring & TMP pulse')
 
-    def setTempLimits(self, tempLow = 0x4, tempHigh = 0x50, sensors = 4):
+    def setAutoFanTempZone(self, fan=1, sensor=1):
+        '''!---PLACEHOLDER---! For individually assigning each fan to a temperature zone'''
+        return None
+
+    def setAutoTminLimits(self, tmin=25, zone = 1):
+        '''!---PLACEHOLDER---! For individually setting temperature zones'''
+        return None
+
+    def setAutoPmin(self, fan=1, pmin=0x40):
+        '''!---PLACEHOLDER---! For individually setting pmin / fan'''
+        return None
+
+    def setAutoPmax(self, fan=1, pmin=0xFF):
+        '''!---PLACEHOLDER---! For individually setting pmax / fan'''
+        return None
+
+    def setTempLimitsGlobal(self, tempLow = 0x4, tempHigh = 0x50, sensors = 4):
+        '''Method sets global tempLow & tempHigh for sensors 1-10 to same value.'''
         '''default power-on values is -127C (0x81) & 127C (0x7F)'''
         '''MSB signifies negative temp, ADC - 256'''
         '''register 0x44 - 0x57'''
@@ -232,6 +258,16 @@ class i2cPi:
                 count += 1
         except:
             logging.info('Failed to set temp limits')
+
+    def setTempLimits(self, tempLow = 0x4, tempHigh = 0x50, sensorNumber = 1):
+        '''!---PLACEHOLDER---! For individually setting temperature zones'''
+        return None
+
+    def setTachLimitsGlobal(self, minRPM ='min', maxRPM='max'):
+        self.setTachLimits(1, minRPM, maxRPM)
+        self.setTachLimits(2, minRPM, maxRPM)
+        self.setTachLimits(3, minRPM, maxRPM)
+        self.setTachLimits(4, minRPM, maxRPM)
 
     def setTachLimits(self, fan = 1, minRPM = 'min', maxRPM = 'max'):
         #Default register sets min and max at furthest range, so does not trigger SMBALERT
@@ -313,8 +349,8 @@ class i2cPi:
         self.configReg1_defaults()   #reapply default config
 
     def rbINT(self):
-        print('Interrupt Status Register 1: %s' %bin(self.writeRead(0x41)))
-        print('Interrupt Status Register 2: %s' %bin(self.writeRead(0x42)))
+        print('Interrupt Status Register 1 0x41: %s' %bin(self.writeRead(0x41)))
+        print('Interrupt Status Register 2 0x42: %s' %bin(self.writeRead(0x42)))
 
     def rbAutoMonitor(self):
         '''Configure to automatic fan control in PWM1/2 & PWM3/4 registers'''
