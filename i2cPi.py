@@ -371,9 +371,9 @@ class i2cPi:
     def validateRegister(self, wantedReg, wantedVal):  #assumes a prior write has been performed so pointer address previously set
         readback = self.bus.read_byte(0x2c, 0x00)
         if wantedVal == readback:
-            print('Register %s value check: (%s, %s, 0d%s)' %(hex(wantedReg), hex(wantedVal), bin(wantedVal), wantedVal))
+            print('Register %s value: (%s, %s, %s)' %(hex(wantedReg), hex(wantedVal), bin(wantedVal), wantedVal))
         else:
-            print('Register value is %s, not %s wanted' %(readback, wantedVal))
+            print('!--ERROR--! Register %s value is %s, not %s wanted' %(hex(wantedReg),readback, wantedVal))
 
     def insertBits(self, regAddress, posHi, posLow, payLoad):
         '''Helper function to insert in a bit payload without impacting surrounding bits in the byte. The regAddress is pointer address, posHi & posLow are bit position to be inserted, payload is wanted binary, ex. 0b11. Example: self.insertBits(0x43, 7, 6, 0b11) will insert in 0b11 into positions 7 & 6 of the byte at address 0x43.'''
