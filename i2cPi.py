@@ -144,7 +144,10 @@ class i2cPi:
     '''tmin range: 0-255 degrees, pmin & pmax: 0-255 for 0-100% - reference pg.26 of ADT740 for instructions'''
 
     def setPPRev(self, fan='all', pulseRev = 2):
-        '''!!!INCOMPLETE!!!! Want this function to allow configuration per fan, currently hardsets all 4 to 2 pulsese / revolution'''
+        '''
+        Valid fan entries: 'all', 1, 2, 3, 4 
+        Valid pulseRev entries: 1, 2, 3, 4
+        '''
         # bits assignment for each pulse per rev: 00=1, 01=2, 10=3, 11=4        
         pulseCodeList = [0b00, 0b01, 0b10, 0b11]    #1, 2, 3, or 4 pulses / rev
         pulseCode = pulseCodeList[pulseRev-1] #translate fan number to pulseRev code
@@ -182,11 +185,21 @@ class i2cPi:
         self.validateRegister(0x43, writeRegVal)
         print("Configured Fan %s for %s pulses per revolution" %(fan, pulseRev))        
 
-    def bitEnds(self, register, insertHi, insertLow):
-        currentReg = self.writeRead(register)
-        highBits = 7 - insertHi
-        lowBits = insertLow
-        bit7toHi = (currentReg >> insertHi) << insertHi
+    def bitEnds(self, regAddress, posHi, posLow, payLoad):
+        '''insertHi & insertLow are bit positions'''
+        bitMaskList = [0b1, 0b11, 0b111, 0b1111, 0b11111, 0b111111, 0b1111111] #mask list for masking bits 0-6
+        currentReg = self.writeRead(regAddress)
+        bitEndtoHi = (currentReg >> posHi) << posHi
+        logging.info('bit[7:%s] is %s' %(posHi, bin(bitEndtoHi)))
+        bitMask = bitMaskList[posLow-1]
+        logging.info('Low bitmask applied is %s' %bin(bitMask))
+        bitLowtoEnd = bitMask & currentReg
+        logging.info('bit[%s:0] is %s' %(posLow, bin(bitLowtoEnd)))
+        bitEnds = bitEndtoHi | bitLowtoEnd
+        logging.info('bitends is %s' %bin(bitEnds))
+        byteLoad = payLoad << posLow | bitEnds
+        logging.info('byteload is %s' %bin(byteLoad))
+        return byteLoad
 
     def setManualMode(self):
         self.bus.write_byte_data(0x2c, 0x68, 0x00)  #set to automatic fan control mode PWM 1 & 2
