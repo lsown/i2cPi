@@ -187,12 +187,12 @@ class i2cPi:
 
     def bitEnds(self, regAddress, posHi, posLow, payLoad):
         '''insertHi & insertLow are bit positions'''
-        bitMaskList = [0b1, 0b11, 0b111, 0b1111, 0b11111, 0b111111, 0b1111111] #mask list for masking bits 0-6
+        bitMaskList = [0b0, 0b1, 0b11, 0b111, 0b1111, 0b11111, 0b111111, 0b1111111] #mask list for masking bits 0-6
         currentReg = self.writeRead(regAddress)
         posHi = posHi + 1   #shift it up by one
         bitEndtoHi = (currentReg >> posHi) << posHi
         logging.info('Hi bit[7:%s] from currentReg is %s' %(posHi, bin(bitEndtoHi)))
-        bitMask = bitMaskList[posLow-1]
+        bitMask = bitMaskList[posLow]
         logging.info('Low bitmask applied is %s' %bin(bitMask))
         bitLowtoEnd = bitMask & currentReg
         logging.info('Low bit[%s:0] from currentReg is %s' %(posLow, bin(bitLowtoEnd)))
