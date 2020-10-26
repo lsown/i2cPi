@@ -155,6 +155,15 @@ class i2cPi:
         if fan == 'all':
             writeRegVal = (pulseCode) | (pulseCode << 2) | (pulseCode << 4) | (pulseCode << 6)
         elif fan == 1:
+            writeRegVal = self.bitEnds(0x43, 1, 0, pulseCode)
+        elif fan == 2:
+            writeRegVal = self.bitEnds(0x43, 3, 2, pulseCode)
+        elif fan == 3:
+            writeRegVal = self.bitEnds(0x43, 5, 4, pulseCode)
+        elif fan == 4:
+            writeRegVal = self.bitEnds(0x43, 7, 6, pulseCode)
+        '''
+        elif fan == 1:
             writeRegVal = pulseCode & currentPulseReg
         elif fan ==2:
             bit7to4 = (currentPulseReg >> 4) << 4
@@ -180,8 +189,8 @@ class i2cPi:
             bitEnds = bit9to7 | bit0to5    #combine bit 7 and bits 0-3, leaving bits 6-4 empty
             logging.info('bitEnds is %s' %bin(bitEnds))
             writeRegVal = (pulseCode << 6) | bitEnds
-
-        self.bus.write_byte_data(0x2c, 0x43, writeRegVal)  #!!!HARDSET!!! - 2 pulses / rev
+        '''
+        self.bus.write_byte_data(0x2c, 0x43, writeRegVal)  #
         self.validateRegister(0x43, writeRegVal)
         print("Configured Fan %s for %s pulses per revolution" %(fan, pulseRev))        
 
