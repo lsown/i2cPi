@@ -112,15 +112,16 @@ class i2cPi:
         lowFreqDict = {0b000:11, 0b001: 14.7, 0b010: 22.1, 0b011: 29.4, 0b100:35.3, 0b101:44.1, 0b110:58.8, 0b111:88.2} #bit code for low frequency in Hz
         hiFreqDict = {0b000:1.4, 0b001: 22.5, 0b010: 22.5, 0b011: 22.5, 0b100:22.5, 0b101:22.5, 0b110:22.5, 0b111:22.5} #bit code for hi frequency in kHz
         if (freqRange =='hi' and (freqBits > 0) and (fanType == '3-wire' or fanType == '2-wire')):
-            print('Invalid configuration, can only run 4-wire at 22.5 kHz')
+            print('Invalid configuration, can only run 4-wire at 22.5 kHz. Exiting.')
+            return None
         elif freqRange =='low':
             writeRegVal = self.insertBits(0x40, 6, 6, 0b1)
             self.validateRegister(0x40, writeRegVal)
-            logging.info('Configured for low frequency PWM')
+            print('Configured for low frequency PWM')
         elif freqRange =='hi':
             writeRegVal = self.insertBits(0x40, 6, 6, 0b0)
             self.validateRegister(0x40, writeRegVal)
-            logging.info('Configured for high frequency PWM')
+            print('Configured for high frequency PWM')
         else:
             print('Nonvalid entry for freq range, enter low or hi')
         writeRegVal = self.insertBits(0x74, 6, 4, freqBits)
