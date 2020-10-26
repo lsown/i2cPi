@@ -187,13 +187,15 @@ class i2cPi:
         pmax1=0xFF, pmax2=0xFF, pmax3=0xFF, pmax4=0xFF):
         '''Default value tmin threshold = 25C, 25% min PWM when tmin hit, goes to 100% max PWM @ 20C above tmin'''
         '''tmin range: 0-255 degrees, pmin & pmax: 0-255 for 0-100% - reference pg.26 of ADT740 for instructions'''
+        '''!--ALERT--! Probably want to eventually separate min / max registers into their own configurable methods''' 
         #Configure to automatic fan control in PWM1/2 & PWM3/4 registers
         self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 7, 6, 0b11))  #set auto fan control mode PWM 1 & 2
         self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 7, 6, 0b11))  #set auto fan control mode PWM 3 & 4
-        logging.info('Configuring to automatic fan control behavior for PWM1-4')
-        #Assign tmp sensors to each fan
+        logging.info('Configured register 0x68 & 0x69 to automatic fan control mode for Fan 1-4')
+        #Assign tmp sensors to each fan  
         self.bus.write_byte_data(0x2c, 0x7C, 0x12)  #Assign 0x20 TMP sensor to Fan1, 0x21 TMP to Fan2
         self.bus.write_byte_data(0x2c, 0x7D, 0x34)  #Assign 0x22 TMP sensor to Fan3, 0x23 TMP to Fan4
+        logging.info('Hard-set assigned TMP01, 02, 03, 04 to Fan01, 02, 03, 04, respectively')
         #When temp exceeds Tmin, fan runs at PWMin. Increases to max speed PWMax at Tmin + 20C
         self.bus.write_byte_data(0x2c, 0x6E, tmin1)  #Temp Tmin1 register
         self.bus.write_byte_data(0x2c, 0x6F, tmin2)  #Temp Tmin2 register
