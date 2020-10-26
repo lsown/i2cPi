@@ -96,9 +96,10 @@ class i2cPi:
 
     def fanConfig(self):    
         self.setFreq()  #configure low frequency mode, monitoring, & 88.2 Hz
-        self.setPulsesPerRev()
+        self.setPPRev()
 
     def setFreq(self, freqRange='low', freqBits=0b111): 
+        """Sets frequency range for fan specified"""
         if freqRange =='low':
             self.configReg1_defaults()   #set low freq + monitoring + temp - range now 11-88.2 hz.
             self.validateRegister(0x40, 0x41)
@@ -109,13 +110,19 @@ class i2cPi:
             print('Configured for high frequency PWM, monitoring enabled')
         else:
             print('Nonvalid entry for freq range, enter low or hi')
-        self.bus.write_byte(0x2c, 0x74)
-        currentVal = self.bus.read_byte(0x2c, 0x74)
-        freqBits = freqBits << 3 | currentVal    #freqBits pos [6:4], bitshift 3 to left, insert into current register values
+        currentVal = self.writeRead(0x74)
+        currentValHi = (currentVal >> 7) << 7
+        logging.info('CurrentValHi is %' %bin(currentValHi))
+        currentValLow = 0b1111 & currentVal
+        logging.info('CurrentValLow is %' %bin(currentValLow))
+        currentValHiLow = currentValHi | currentValLow
+        logging.info('currentValHiLow is %' %bin(currentValHiLow))
+        freqBits = freqBits << 3 | currentValHiLow    #freqBits pos [6:4], bitshift 3 to left, insert into current register values
         self.bus.write_byte_data(0x2c, 0x74, freqBits)  #hard set 88.2Hz if freq=7 by setting config reg 2 0x74[6:4] bits to 111 - MAKE SURE IN register 0x40 is in LOW FREQ MODE before changing to avoid fan damage.
         self.validateRegister(0x74, 0x70)
 
-    def setPWM(self, fan=1, dutyCycle=100): #selects fan and controls duty cycle from 0-100%
+    def setPWM(self, fan=1, dutyCycle=100): 
+        """Sets duty cycle from 0-100% for fan specified"""
         try:
             duty8bit = int(dutyCycle/0.39)  #0.39 is the conversion factor from % to bits.
             fanRegister = 0x32+fan-1 #selector for fan register 0x32-0x35
@@ -134,7 +141,7 @@ class i2cPi:
 
     '''tmin range: 0-255 degrees, pmin & pmax: 0-255 for 0-100% - reference pg.26 of ADT740 for instructions'''
 
-    def setPulsesPerRev(self, fan='all', pulseRev = 2):
+    def setPPRev(self, fan='all', pulseRev = 2):
         '''!!!INCOMPLETE!!!! Want this function to allow configuration per fan, currently hardsets all 4 to 2 pulsese / revolution'''
         # bits assignment for each pulse per rev: 00=1, 01=2, 10=3, 11=4
         '''In progress
@@ -154,10 +161,11 @@ class i2cPi:
             writeRegVal = (pulseCode) | (pulseCode << 2) | (pulseCode << 4) | (pulseCode << 6)
         self.bus.write_byte_data(0x2c, 0x43, writeRegVal)  #!!!HARDSET!!! - 2 pulses / rev
         self.validateRegister(0x43, writeRegVal)
+        print("Configured Fan %s for %s pulses per revolution" %(fan, pulseRev))
         '''
         self.bus.write_byte_data(0x2c, 0x43, 0x55)  #!!!HARDSET!!! - 2 pulses / rev
         self.validateRegister(0x43, 0x55)
-        print("Configured Fan %s for %s pulses per revolution" %(fan, pulseRev))
+        print("Configured Fan 1-4 for %s pulses per revolution" %(fan, pulseRev))
 
     def setManualMode(self):
         self.bus.write_byte_data(0x2c, 0x68, 0x00)  #set to automatic fan control mode PWM 1 & 2
