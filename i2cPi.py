@@ -147,9 +147,11 @@ class i2cPi:
         '''!!!INCOMPLETE!!!! Want this function to allow configuration per fan, currently hardsets all 4 to 2 pulsese / revolution'''
         # bits assignment for each pulse per rev: 00=1, 01=2, 10=3, 11=4        
         pulseCodeList = [0b00, 0b01, 0b10, 0b11]    #1, 2, 3, or 4 pulses / rev
-        pulseCode = pulseCodeList[fan-1] #translate fan number to pulseRev code
+        pulseCode = pulseCodeList[pulseRev-1] #translate fan number to pulseRev code
         currentPulseReg = self.writeRead(0x43)
-        if fan == 1:
+        if fan == 'all':
+            writeRegVal = (pulseCode) | (pulseCode << 2) | (pulseCode << 4) | (pulseCode << 6)
+        elif fan == 1:
             writeRegVal = pulseCode & currentPulseReg
         elif fan ==2:
             bit7to4 = (currentPulseReg >> 4) << 4
@@ -158,7 +160,7 @@ class i2cPi:
             logging.info('bit[0:1] is %s' %bin(bit0to1))
             bitEnds = bit7to4 | bit0to1    #combine bit 7 and bits 0-3, leaving bits 6-4 empty
             logging.info('bitEnds is %s' %bin(bitEnds))
-            writeRegVal = (pulseCode << 2) & bitEnds
+            writeRegVal = (pulseCode << 2) | bitEnds
         elif fan == 3:
             bit7to6 = (currentPulseReg >> 6) << 6
             logging.info('bit[7:6] is %s' %bin(bit7to6))
@@ -166,7 +168,7 @@ class i2cPi:
             logging.info('bit[0:3] is %s' %bin(bit0to3))
             bitEnds = bit7to6 | bit0to3    #combine bit 7 and bits 0-3, leaving bits 6-4 empty
             logging.info('bitEnds is %s' %bin(bitEnds))
-            writeRegVal = (pulseCode << 4) & bitEnds
+            writeRegVal = (pulseCode << 4) | bitEnds
         elif fan == 4:
             bit9to7 = (currentPulseReg >> 8) << 8
             logging.info('bit[9:7] is %s' %bin(bit9to7))
@@ -174,9 +176,8 @@ class i2cPi:
             logging.info('bit[0:3] is %s' %bin(bit0to5))
             bitEnds = bit9to7 | bit0to5    #combine bit 7 and bits 0-3, leaving bits 6-4 empty
             logging.info('bitEnds is %s' %bin(bitEnds))
-            writeRegVal = (pulseCode << 6) & bitEnds
-        elif fan == 'all':
-            writeRegVal = (pulseCode) | (pulseCode << 2) | (pulseCode << 4) | (pulseCode << 6)
+            writeRegVal = (pulseCode << 6) | bitEnds
+
         self.bus.write_byte_data(0x2c, 0x43, writeRegVal)  #!!!HARDSET!!! - 2 pulses / rev
         self.validateRegister(0x43, writeRegVal)
         print("Configured Fan %s for %s pulses per revolution" %(fan, pulseRev))        
