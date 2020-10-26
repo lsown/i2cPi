@@ -94,9 +94,18 @@ class i2cPi:
         except OSError:
             logging.info('Error 121 - Remote I/O Error on address 77 - TCA9548')
 
+    def adtEN(self, wantedState = 'on'):
+        #Bit value 0: ON, 1 OFF on bit7 of register 0x74
+        if wantedState == 'on':
+            payLoad = 0b0   
+        elif wantedState == 'off':
+            payLoad = 0b1   
+        self.bus.write_byte_data(0x2c, 0x74, self.insertBits(0x74, 7, 7, payLoad))
+        print('ADT7470 configured to %s , %s set on bit 7 of register 0x74' %(wantedState, bin(payLoad)))
+
     def fanConfig(self):    
         self.setFreq()  #configure low frequency mode, monitoring, & 88.2 Hz
-        self.setPPRev()
+        self.setPPRev() #configures pulses per RPM
 
     def setFreq(self, freqRange='low', freqBits=0b111): 
         """Sets frequency range for fan specified"""
@@ -111,6 +120,10 @@ class i2cPi:
         else:
             print('Nonvalid entry for freq range, enter low or hi')
         '''below is to create bookends for inserting freqBits'''
+        writeRegVal = self.insertBits(0x74, 6, 4, freqBits)
+        self.bus.write_byte_data(0x2c, 0x74, writeRegVal)
+        self.validateRegister(0x74, writeRegVal)
+        '''
         currentVal = self.writeRead(0x74)   #get current register
         bit7 = (currentVal >> 7) << 7   #remove bits 6:0, grab bit 7
         logging.info('bit7 is %s' %bin(bit7))
@@ -119,9 +132,9 @@ class i2cPi:
         bitEnds = bit7 | bit0to3    #combine bit 7 and bits 0-3, leaving bits 6-4 empty
         logging.info('bitEnds is %s' %bin(bitEnds))
         freqBits = freqBits << 3 | bitEnds    #freqBits pos [6:4], bitshift 3 to left, insert into current register values
-
         self.bus.write_byte_data(0x2c, 0x74, freqBits)  #hard set 88.2Hz if freq=7 by setting config reg 2 0x74[6:4] bits to 111 - MAKE SURE IN register 0x40 is in LOW FREQ MODE before changing to avoid fan damage.
         self.validateRegister(0x74, freqBits)
+        '''
 
     def setPWM(self, fan=1, dutyCycle=100): 
         """Sets duty cycle from 0-100% for fan specified"""
@@ -151,65 +164,19 @@ class i2cPi:
         # bits assignment for each pulse per rev: 00=1, 01=2, 10=3, 11=4        
         pulseCodeList = [0b00, 0b01, 0b10, 0b11]    #1, 2, 3, or 4 pulses / rev
         pulseCode = pulseCodeList[pulseRev-1] #translate fan number to pulseRev code
-        currentPulseReg = self.writeRead(0x43)
         if fan == 'all':
             writeRegVal = (pulseCode) | (pulseCode << 2) | (pulseCode << 4) | (pulseCode << 6)
         elif fan == 1:
-            writeRegVal = self.bitEnds(0x43, 1, 0, pulseCode)
+            writeRegVal = self.insertBits(0x43, 1, 0, pulseCode)
         elif fan == 2:
-            writeRegVal = self.bitEnds(0x43, 3, 2, pulseCode)
+            writeRegVal = self.insertBits(0x43, 3, 2, pulseCode)
         elif fan == 3:
-            writeRegVal = self.bitEnds(0x43, 5, 4, pulseCode)
+            writeRegVal = self.insertBits(0x43, 5, 4, pulseCode)
         elif fan == 4:
-            writeRegVal = self.bitEnds(0x43, 7, 6, pulseCode)
-        '''
-        elif fan == 1:
-            writeRegVal = pulseCode & currentPulseReg
-        elif fan ==2:
-            bit7to4 = (currentPulseReg >> 4) << 4
-            logging.info('bit[7:4] is %s' %bin(bit7to4))
-            bit0to1 = 0b11 & currentPulseReg   #mask off to grab bits 3:0
-            logging.info('bit[0:1] is %s' %bin(bit0to1))
-            bitEnds = bit7to4 | bit0to1    #combine bit 7 and bits 0-3, leaving bits 6-4 empty
-            logging.info('bitEnds is %s' %bin(bitEnds))
-            writeRegVal = (pulseCode << 2) | bitEnds
-        elif fan == 3:
-            bit7to6 = (currentPulseReg >> 6) << 6
-            logging.info('bit[7:6] is %s' %bin(bit7to6))
-            bit0to3 = 0b1111 & currentPulseReg   #mask off to grab bits 3:0
-            logging.info('bit[0:3] is %s' %bin(bit0to3))
-            bitEnds = bit7to6 | bit0to3    #combine bit 7 and bits 0-3, leaving bits 6-4 empty
-            logging.info('bitEnds is %s' %bin(bitEnds))
-            writeRegVal = (pulseCode << 4) | bitEnds
-        elif fan == 4:
-            bit9to7 = (currentPulseReg >> 8) << 8
-            logging.info('bit[9:7] is %s' %bin(bit9to7))
-            bit0to5 = 0b111111 & currentPulseReg   #mask off to grab bits 3:0
-            logging.info('bit[0:3] is %s' %bin(bit0to5))
-            bitEnds = bit9to7 | bit0to5    #combine bit 7 and bits 0-3, leaving bits 6-4 empty
-            logging.info('bitEnds is %s' %bin(bitEnds))
-            writeRegVal = (pulseCode << 6) | bitEnds
-        '''
+            writeRegVal = self.insertBits(0x43, 7, 6, pulseCode)
         self.bus.write_byte_data(0x2c, 0x43, writeRegVal)  #
         self.validateRegister(0x43, writeRegVal)
         print("Configured Fan %s for %s pulses per revolution" %(fan, pulseRev))        
-
-    def bitEnds(self, regAddress, posHi, posLow, payLoad):
-        '''insertHi & insertLow are bit positions'''
-        bitMaskList = [0b0, 0b1, 0b11, 0b111, 0b1111, 0b11111, 0b111111, 0b1111111] #mask list for masking bits 0-6
-        currentReg = self.writeRead(regAddress)
-        posHi = posHi + 1   #shift it up by one
-        bitEndtoHi = (currentReg >> posHi) << posHi
-        logging.info('Hi bit[7:%s] from currentReg is %s' %(posHi, bin(bitEndtoHi)))
-        bitMask = bitMaskList[posLow]
-        logging.info('Low bitmask applied is %s' %bin(bitMask))
-        bitLowtoEnd = bitMask & currentReg
-        logging.info('Low bit[%s:0] from currentReg is %s' %(posLow, bin(bitLowtoEnd)))
-        bitEnds = bitEndtoHi | bitLowtoEnd
-        logging.info('Applied final mask is %s' %bin(bitEnds))
-        byteLoad = payLoad << posLow | bitEnds
-        logging.info('Final byteload with insertion is %s' %bin(byteLoad))
-        return byteLoad
 
     def setManualMode(self):
         self.bus.write_byte_data(0x2c, 0x68, 0x00)  #set to automatic fan control mode PWM 1 & 2
@@ -220,8 +187,9 @@ class i2cPi:
 
     def setAutoMonitor(self, 
     tmin1=25, tmin2=25, tmin3=25, tmin4=25, 
-    pmin1=0xF, pmin2=0xF, pmin3=0xF, pmin4=0xF,
+    pmin1=0x4, pmin2=0x4, pmin3=0x4, pmin4=0x4,
     pmax1=0xFF, pmax2=0xFF, pmax3=0xFF, pmax4=0xFF):
+    '''Default value tmin threshold = 25C, 25% min PWM when tmin hit, goes to 100% max PWM @ 20C above tmin'''
         '''Configure to automatic fan control in PWM1/2 & PWM3/4 registers'''
         self.bus.write_byte_data(0x2c, 0x68, 0xC0)  #set to automatic fan control mode PWM 1 & 2
         self.bus.write_byte_data(0x2c, 0x69, 0xC0)  #set to automatic fan control mode PWM 3 & 4
@@ -375,13 +343,55 @@ class i2cPi:
         else:
             print('Register value is %s, not %s wanted' %(readback, wantedVal))
 
+    def insertBits(self, regAddress, posHi, posLow, payLoad):
+        '''Helper function to insert in a bit payload without impacting surrounding bits in the byte. The regAddress is pointer address, posHi & posLow are bit position to be inserted, payload is wanted binary, ex. 0b11. Example: self.insertBits(0x43, 7, 6, 0b11) will insert in 0b11 into positions 7 & 6 of the byte at address 0x43.'''
+        bitMaskList = [0b0, 0b1, 0b11, 0b111, 0b1111, 0b11111, 0b111111, 0b1111111] #mask list for masking bits 0-6
+        currentReg = self.writeRead(regAddress)
+        posHi = posHi + 1   #shift it up by one
+        bitEndtoHi = (currentReg >> posHi) << posHi
+        logging.info('Hi bit[7:%s] from currentReg is %s' %(posHi, bin(bitEndtoHi)))
+        bitMask = bitMaskList[posLow]
+        logging.info('Low bitmask applied is %s' %bin(bitMask))
+        bitLowtoEnd = bitMask & currentReg
+        logging.info('Low bit[%s:0] from currentReg is %s' %(posLow, bin(bitLowtoEnd)))
+        bitEnds = bitEndtoHi | bitLowtoEnd
+        logging.info('Applied final mask is %s' %bin(bitEnds))
+        byteLoad = payLoad << posLow | bitEnds
+        logging.info('Final byteload with insertion is %s' %bin(byteLoad))
+        return byteLoad
+
     def writeRead(self, pointerAddress):
         self.bus.write_byte(0x2c, pointerAddress)
         return self.bus.read_byte(0x2c, pointerAddress)
-
-    def adtEn(self):
-        self.bus.write_byte_data(0x2c, 0x74, (self.bus.read_byte(0x2c, 0x74) | 0x80))    #keep all prior bits, flip [7] to 1.
     
-    def enable(self):
-        self.bus.write_byte_data(0x2c, 0x40, (self.bus.read_byte(0x2c, 0x40) | 0x20))   #Set low frequency fan drive
-        self.bus.write_byte(0x2c, 0x74, 0x70)   #re-enable, set to 88.2 Hz fan speed
+
+
+    '''
+    !-- old junk code, archived --!
+    elif fan == 1:
+        writeRegVal = pulseCode & currentPulseReg
+    elif fan ==2:
+        bit7to4 = (currentPulseReg >> 4) << 4
+        logging.info('bit[7:4] is %s' %bin(bit7to4))
+        bit0to1 = 0b11 & currentPulseReg   #mask off to grab bits 3:0
+        logging.info('bit[0:1] is %s' %bin(bit0to1))
+        bitEnds = bit7to4 | bit0to1    #combine bit 7 and bits 0-3, leaving bits 6-4 empty
+        logging.info('bitEnds is %s' %bin(bitEnds))
+        writeRegVal = (pulseCode << 2) | bitEnds
+    elif fan == 3:
+        bit7to6 = (currentPulseReg >> 6) << 6
+        logging.info('bit[7:6] is %s' %bin(bit7to6))
+        bit0to3 = 0b1111 & currentPulseReg   #mask off to grab bits 3:0
+        logging.info('bit[0:3] is %s' %bin(bit0to3))
+        bitEnds = bit7to6 | bit0to3    #combine bit 7 and bits 0-3, leaving bits 6-4 empty
+        logging.info('bitEnds is %s' %bin(bitEnds))
+        writeRegVal = (pulseCode << 4) | bitEnds
+    elif fan == 4:
+        bit9to7 = (currentPulseReg >> 8) << 8
+        logging.info('bit[9:7] is %s' %bin(bit9to7))
+        bit0to5 = 0b111111 & currentPulseReg   #mask off to grab bits 3:0
+        logging.info('bit[0:3] is %s' %bin(bit0to5))
+        bitEnds = bit9to7 | bit0to5    #combine bit 7 and bits 0-3, leaving bits 6-4 empty
+        logging.info('bitEnds is %s' %bin(bitEnds))
+        writeRegVal = (pulseCode << 6) | bitEnds
+    '''
