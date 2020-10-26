@@ -186,10 +186,10 @@ class i2cPi:
         logging.info('Re-configured to manual fan control behavior for PWM1-4')
 
     def setAutoMonitor(self, 
-    tmin1=25, tmin2=25, tmin3=25, tmin4=25, 
-    pmin1=0x4, pmin2=0x4, pmin3=0x4, pmin4=0x4,
-    pmax1=0xFF, pmax2=0xFF, pmax3=0xFF, pmax4=0xFF):
-    '''Default value tmin threshold = 25C, 25% min PWM when tmin hit, goes to 100% max PWM @ 20C above tmin'''
+        tmin1=25, tmin2=25, tmin3=25, tmin4=25, 
+        pmin1=0x4, pmin2=0x4, pmin3=0x4, pmin4=0x4,
+        pmax1=0xFF, pmax2=0xFF, pmax3=0xFF, pmax4=0xFF):
+        '''Default value tmin threshold = 25C, 25% min PWM when tmin hit, goes to 100% max PWM @ 20C above tmin'''
         '''Configure to automatic fan control in PWM1/2 & PWM3/4 registers'''
         self.bus.write_byte_data(0x2c, 0x68, 0xC0)  #set to automatic fan control mode PWM 1 & 2
         self.bus.write_byte_data(0x2c, 0x69, 0xC0)  #set to automatic fan control mode PWM 3 & 4
