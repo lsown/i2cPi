@@ -137,13 +137,15 @@ class i2cPi:
     def setPulsesPerRev(self, fan='all', pulseRev = 2):
         '''!!!INCOMPLETE!!!! Want this function to allow configuration per fan, currently hardsets all 4 to 2 pulsese / revolution'''
         # bits assignment for each pulse per rev: 00=1, 01=2, 10=3, 11=4
+        '''In progress
         pulseCodeList = [0b00, 0b01, 0b10, 0b11]    #1, 2, 3, or 4 pulses / rev
         pulseCode = pulseCodeList[fan-1] #translate fan number to pulseRev code
         currentPulseReg = self.writeRead(0x43)
         if fan == 1:
-            writeRegVal = pulseCode | currentPulseReg
+            writeRegVal = pulseCode & currentPulseReg
         elif fan ==2:
-            writeRegVal = (pulseCode << 2) | currentPulseReg
+            firstTwo = currentPulseReg & 0b11111111
+            writeRegVal = (pulseCode << 2) & currentPulseReg >> 2
         elif fan == 3:
             writeRegVal = (pulseCode << 4) | currentPulseReg
         elif fan == 3:
@@ -152,6 +154,9 @@ class i2cPi:
             writeRegVal = (pulseCode) | (pulseCode << 2) | (pulseCode << 4) | (pulseCode << 6)
         self.bus.write_byte_data(0x2c, 0x43, writeRegVal)  #!!!HARDSET!!! - 2 pulses / rev
         self.validateRegister(0x43, writeRegVal)
+        '''
+        self.bus.write_byte_data(0x2c, 0x43, 0x55)  #!!!HARDSET!!! - 2 pulses / rev
+        self.validateRegister(0x43, 0x55)
         print("Configured Fan %s for %s pulses per revolution" %(fan, pulseRev))
 
     def setManualMode(self):
