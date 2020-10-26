@@ -111,6 +111,7 @@ class i2cPi:
         """Sets frequency range for fan specified"""
         lowFreqDict = {0b000:11, 0b001: 14.7, 0b010: 22.1, 0b011: 29.4, 0b100:35.3, 0b101:44.1, 0b110:58.8, 0b111:88.2} #bit code for low frequency in Hz
         hiFreqDict = {0b000:1.4, 0b001: 22.5, 0b010: 22.5, 0b011: 22.5, 0b100:22.5, 0b101:22.5, 0b110:22.5, 0b111:22.5} #bit code for hi frequency in kHz
+        '''Below prevents accidental setting of a 2- or 3-wire fan to > 1.4 kHz. This can potentially blow the fan internal circuitry in worst-case scenario.'''
         if (freqRange =='hi' and (freqBits > 0) and (fanType == '3-wire' or fanType == '2-wire')):
             print('Invalid configuration, can only run 4-wire at 22.5 kHz. Exiting.')
             return None
@@ -124,6 +125,7 @@ class i2cPi:
             print('Configured for high frequency PWM')
         else:
             print('Nonvalid entry for freq range, enter low or hi')
+            return None #escape out of function before setting the frequency registry
         writeRegVal = self.insertBits(0x74, 6, 4, freqBits)
         self.bus.write_byte_data(0x2c, 0x74, writeRegVal)
         self.validateRegister(0x74, writeRegVal)
@@ -150,8 +152,6 @@ class i2cPi:
         except OSError:
             logging.info('Error 121 - Remote I/O Error on address 0x2c while writing fanPWM')
 
-    '''tmin range: 0-255 degrees, pmin & pmax: 0-255 for 0-100% - reference pg.26 of ADT740 for instructions'''
-
     def setPPRev(self, fan='all', pulseRev = 2):
         '''
         Valid fan entries: 'all', 1, 2, 3, 4 
@@ -175,20 +175,21 @@ class i2cPi:
         print("Configured Fan %s for %s pulses per revolution" %(fan, pulseRev))        
 
     def setManualMode(self):
-        self.bus.write_byte_data(0x2c, 0x68, 0x00)  #set to automatic fan control mode PWM 1 & 2
+        self.bus.write_byte_data(0x2c, 0x68, 0x00)  #set to manual fan control mode PWM 1 & 2
         self.validateRegister(0x68, 0x00)
-        self.bus.write_byte_data(0x2c, 0x69, 0x00)  #set to automatic fan control mode PWM 3 & 4
+        self.bus.write_byte_data(0x2c, 0x69, 0x00)  #set to manual fan control mode PWM 3 & 4
         self.validateRegister(0x69, 0x00)
-        logging.info('Re-configured to manual fan control behavior for PWM1-4')
+        logging.info('Configured to manual fan control behavior for PWM1-4. Method .setPWM can now be used to manually control fan speeds.')
 
     def setAutoMonitor(self, 
         tmin1=25, tmin2=25, tmin3=25, tmin4=25, 
         pmin1=0x4, pmin2=0x4, pmin3=0x4, pmin4=0x4,
         pmax1=0xFF, pmax2=0xFF, pmax3=0xFF, pmax4=0xFF):
         '''Default value tmin threshold = 25C, 25% min PWM when tmin hit, goes to 100% max PWM @ 20C above tmin'''
-        '''Configure to automatic fan control in PWM1/2 & PWM3/4 registers'''
-        self.bus.write_byte_data(0x2c, 0x68, 0xC0)  #set to automatic fan control mode PWM 1 & 2
-        self.bus.write_byte_data(0x2c, 0x69, 0xC0)  #set to automatic fan control mode PWM 3 & 4
+        '''tmin range: 0-255 degrees, pmin & pmax: 0-255 for 0-100% - reference pg.26 of ADT740 for instructions'''
+        #Configure to automatic fan control in PWM1/2 & PWM3/4 registers
+        self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 7, 6, 0b11))  #set auto fan control mode PWM 1 & 2
+        self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 7, 6, 0b11))  #set auto fan control mode PWM 3 & 4
         logging.info('Configuring to automatic fan control behavior for PWM1-4')
         #Assign tmp sensors to each fan
         self.bus.write_byte_data(0x2c, 0x7C, 0x12)  #Assign 0x20 TMP sensor to Fan1, 0x21 TMP to Fan2
@@ -231,15 +232,15 @@ class i2cPi:
                 logging.info('Address %s applied value %s' %(hex(hexAddHigh), hex(tempHigh)))
                 count += 1
         except:
-            logging.info('Failed to set')
+            logging.info('Failed to set temp limits')
 
     def setTachLimits(self, fan = 1, minRPM = 'min', maxRPM = 'max'):
         #Default register sets min and max at furthest range, so does not trigger SMBALERT
         '''!ALERT! - register is 0x58 - 0x67. This register is a bit nasty. 
         We need to update this register as the fan controller monitor adjusts PWM up and down in response to temperature, otherwise... these registers may flag.
         
-        Therefore, we need to experimentally map the normal PWM duty cycle, frequency, and tachometer readback in a real use case
-        to determine the range in each regime and % tolerance we will allow before SMBus Flags'''
+        We'll need to map the normal PWM duty cycle, frequency, and tachometer readback in a real use case
+        to determine fan behavior @ various PWM cycles to control for when alert flags occur.'''
 
         hexMinAddLow = 0x58+(2*(fan-1))
         hexMinAddHigh = 0x59+(2*(fan-1))
