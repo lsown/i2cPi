@@ -119,7 +119,7 @@ class i2cPi:
         logging.info('currentValHiLow is %s' %bin(currentValHiLow))
         freqBits = freqBits << 3 | currentValHiLow    #freqBits pos [6:4], bitshift 3 to left, insert into current register values
         self.bus.write_byte_data(0x2c, 0x74, freqBits)  #hard set 88.2Hz if freq=7 by setting config reg 2 0x74[6:4] bits to 111 - MAKE SURE IN register 0x40 is in LOW FREQ MODE before changing to avoid fan damage.
-        self.validateRegister(0x74, 0x70)
+        self.validateRegister(0x74, freqBits)
 
     def setPWM(self, fan=1, dutyCycle=100): 
         """Sets duty cycle from 0-100% for fan specified"""
