@@ -103,12 +103,12 @@ class i2cPi:
         self.bus.write_byte_data(0x2c, 0x74, self.insertBits(0x74, 7, 7, payLoad))
         print('ADT7470 configured to %s , %s set on bit 7 of register 0x74' %(wantedState, bin(payLoad)))
 
-    def fanConfig(self):    
-        self.setFreq()  #configure low frequency mode, monitoring, & 88.2 Hz
-        self.setPPRev() #configures pulses per RPM
+    def configFansGlobal(self, freqRange = "low", freqBits = 0b111, fanType='3-wire', fan='all', pulseRev = 2):    
+        self.setFreq(freqRange, freqBits, fanType)  #configure low frequency mode, monitoring, & 88.2 Hz
+        self.setPPRev(fan, pulseRev) #configures pulses per RPM
 
     def setFreq(self, freqRange='low', freqBits=0b111, fanType = '3-wire'): 
-        """Sets frequency range for fan specified"""
+        """Sets global frequency range for fans. Configures 2 registers, specifying low or hi frequency (0x40), and speed (0x74) in low frequency mode. Configures speed for lowest common denominator fan."""
         lowFreqDict = {0b000:11, 0b001: 14.7, 0b010: 22.1, 0b011: 29.4, 0b100:35.3, 0b101:44.1, 0b110:58.8, 0b111:88.2} #bit code for low frequency in Hz
         hiFreqDict = {0b000:1.4, 0b001: 22.5, 0b010: 22.5, 0b011: 22.5, 0b100:22.5, 0b101:22.5, 0b110:22.5, 0b111:22.5} #bit code for hi frequency in kHz
         '''Below prevents accidental setting of a 2- or 3-wire fan to > 1.4 kHz. This can potentially blow the fan internal circuitry in worst-case scenario.'''
@@ -137,8 +137,8 @@ class i2cPi:
     def setPWM(self, fan=1, dutyCycle=100): 
         """Sets duty cycle from 0-100% for fan specified"""
         try:
-            duty8bit = int(dutyCycle/0.39)  #0.39 is the conversion factor from % to bits.
             fanRegister = 0x32+fan-1 #selector for fan register 0x32-0x35
+            duty8bit = int(dutyCycle/0.39)  #0.39 is the conversion factor from % to bits.
             if duty8bit > 255:
                 duty8bit = 255
             if (fan >= 1 and fan <= 4):
@@ -153,10 +153,7 @@ class i2cPi:
             logging.info('Error 121 - Remote I/O Error on address 0x2c while writing fanPWM')
 
     def setPPRev(self, fan='all', pulseRev = 2):
-        '''
-        Valid fan entries: 'all', 1, 2, 3, 4 
-        Valid pulseRev entries: 1, 2, 3, 4
-        '''
+        '''Configures IC calculator for each fan tach. Valid fan entries: 'all', 1, 2, 3, 4. Valid pulseRev entries: 1, 2, 3, 4.'''
         # bits assignment for each pulse per rev: 00=1, 01=2, 10=3, 11=4        
         pulseCodeList = [0b00, 0b01, 0b10, 0b11]    #1, 2, 3, or 4 pulses / rev
         pulseCode = pulseCodeList[pulseRev-1] #translate fan number to pulseRev code
@@ -174,19 +171,18 @@ class i2cPi:
         self.validateRegister(0x43, writeRegVal)
         print("Configured Fan %s for %s pulses per revolution" %(fan, pulseRev))        
 
-    def setManualMode(self):
-        self.bus.write_byte_data(0x2c, 0x68, 0x00)  #set to manual fan control mode PWM 1 & 2
+    def setManualModeAll(self):
+        self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 7, 6, 0b00))  #set man fan control mode PWM 1 & 2
         self.validateRegister(0x68, 0x00)
-        self.bus.write_byte_data(0x2c, 0x69, 0x00)  #set to manual fan control mode PWM 3 & 4
+        self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 7, 6, 0b00))  #set man fan control mode PWM 1 & 2
         self.validateRegister(0x69, 0x00)
         logging.info('Configured to manual fan control behavior for PWM1-4. Method .setPWM can now be used to manually control fan speeds.')
 
     def setAutoMonitor(self, 
         tmin1=25, tmin2=25, tmin3=25, tmin4=25, 
-        pmin1=0x4, pmin2=0x4, pmin3=0x4, pmin4=0x4,
+        pmin1=0x40, pmin2=0x40, pmin3=0x40, pmin4=0x40,
         pmax1=0xFF, pmax2=0xFF, pmax3=0xFF, pmax4=0xFF):
-        '''Default value tmin threshold = 25C, 25% min PWM when tmin hit, goes to 100% max PWM @ 20C above tmin'''
-        '''tmin range: 0-255 degrees, pmin & pmax: 0-255 for 0-100% - reference pg.26 of ADT740 for instructions'''
+        '''tmin value range: 0-255 degrees, pmin & pmax: 0-255 for 0-100% - reference pg.26 of ADT740 for instructions'''
         '''!--ALERT--! Probably want to eventually separate min / max registers into their own configurable methods''' 
         #Configure to automatic fan control in PWM1/2 & PWM3/4 registers
         self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 7, 6, 0b11))  #set auto fan control mode PWM 1 & 2
@@ -217,7 +213,8 @@ class i2cPi:
         logging.info('Setting max pwm to %s%%, %s%%, %s%%, & %s%%' 
             %(int(pmax1*.39), int(pmax2*.39), int(pmax3*.39), int(pmax4*.39)))
         #Sets PWM max duty cycle - will start running @ this duty cycle when Tmin exceeded
-        self.configReg1_defaults() #config to run monitoring, low freq, & TMPstartpulse        
+        self.bus.write_byte_data(0x2c, 0x40, self.insertBits(0x40, 0, 0, 0b1))  #configure to STRT monitoring & PWM control based on limits
+        self.bus.write_byte_data(0x2c, 0x40, self.insertBits(0x40, 7, 7, 0b1))  #configure to initiate TMP pulse
 
     def setTempLimits(self, tempLow = 0x4, tempHigh = 0x50, sensors = 4):
         '''default power-on values is -127C (0x81) & 127C (0x7F)'''
@@ -321,8 +318,8 @@ class i2cPi:
 
     def rbAutoMonitor(self):
         '''Configure to automatic fan control in PWM1/2 & PWM3/4 registers'''
-        self.bus.writeRead(0x2c, 0x68)  #set to automatic fan control mode PWM 1 & 2
-        self.bus.writeRead(0x2c, 0x69)  #set to automatic fan control mode PWM 3 & 4
+        self.writeRead(0x68)  #set to automatic fan control mode PWM 1 & 2
+        self.writeRead(0x69)  #set to automatic fan control mode PWM 3 & 4
         logging.info('Configuring to automatic fan control behavior for PWM1-4')
         #Assign tmp sensors to each fan
         bin(self.writeRead(0x7c))  #Assign 0x20 TMP sensor to Fan1, 0x21 TMP to Fan2
