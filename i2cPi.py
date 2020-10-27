@@ -245,10 +245,10 @@ class i2cPi:
         return None
 
     def setTempLimitsGlobal(self, tempLow = 0x4, tempHigh = 0x50, sensors = 4):
-        '''Method sets global tempLow & tempHigh for sensors 1-10 to same value.'''
-        '''default power-on values is -127C (0x81) & 127C (0x7F)'''
-        '''MSB signifies negative temp, ADC - 256'''
-        '''register 0x44 - 0x57'''
+        '''Method sets global tempLow & tempHigh for sensors 1-10 to same value.
+        default power-on values is -127C (0x81) & 127C (0x7F), these are min / max range.
+        MSB [bit7] signifies negative temp, use equation: bit[6:0] - 256.
+        Register value is: 0x44 - 0x57.'''
         count = 1
         try:
             while count < (sensors + 1):
@@ -286,7 +286,7 @@ class i2cPi:
         hexMinAddHigh = 0x59+(2*(fan-1))
         hexMaxAddLow = 0x60+(2*(fan-1))
         hexMaxAddHigh = 0x61+(2*(fan-1))
-        if minRPM == 'min':
+        if (minRPM == 'min' or minRPM == 0):
             tachMinLowB = 0xff
             tachMinHighB = 0xff
         else:
@@ -327,7 +327,7 @@ class i2cPi:
         for fanRegister in [0x32, 0x33, 0x34, 0x35]:
             self.bus.write_byte(0x2c, fanRegister)
             readByte=self.bus.read_byte(0x2c, 0x00)
-            print('PWM Register %s is set to %s hex, aka %s percent' %(hex(fanRegister), hex(readByte), (readByte*0.39)))
+            print('PWM Register %s is set to %s hex, i.e. %s percent' %(hex(fanRegister), hex(readByte), int(readByte*0.39)))
 
     def rbRPM(self, fan=1):
         hexAddLow = 0x2a+(2*(fan-1))
@@ -345,12 +345,13 @@ class i2cPi:
             print("Fan #%s is read at rpm %s" %(fan, int(rpm)))
 
     def rbTempN(self, sensorNumber = 4): #polls max temp and N sensors (up to 10)
-        self.configReg1_defaults()   #set TMP daisy, set low frequency mode,  set monitoring.
+        self.bus.write_byte_data(0x2c, 0x74, self.insertBits(0x74, 7, 7, 0b1))  #start TMP daisy.
+        logging.info('rbTempN: Starting TMP daisy chain.')
         waitTime = sensorNumber * 0.2   #200 mS / TMP sensor. Max of 10 sensors. 
-        print('Waiting for %s seconds to gather TMP05 data' %waitTime)
+        print('rbTempN: Waiting for %s seconds to gather TMP05 data' %waitTime)
         time.sleep(waitTime)  #wait 200 mS per TMP sensor, in tester board we have 4. Max of 10, so prob ~2 sec max.
-        self.bus.write_byte(0x2c, 0x40, 0x41)   #stop TMP daisy, set low freq, en monitoring.
-        print('Max Temp Register 0x78 is %s from all temp sensors' %self.writeRead(0x78))   #poll max temp
+        self.bus.write_byte_data(0x2c, 0x74, self.insertBits(0x74, 7, 7, 0b0))   #stop TMP daisy.
+        print('rbTempN: Max Temp Register 0x78 is %s from all temp sensors' %self.writeRead(0x78))   #poll max temp
         count = 1
         try:
             while count < (sensorNumber + 1):
@@ -359,7 +360,8 @@ class i2cPi:
                 count+=1        
         except:
             logging.info('Failed temperature polling')
-        self.configReg1_defaults()   #reapply default config
+        self.bus.write_byte_data(0x2c, 0x74, self.insertBits(0x74, 7, 7, 0b1))  #re-start TMP daisy. Can comment out if we don't want auto-restart.
+        logging.info('Restarted TMP daisy chain.')
 
     def rbINT(self):
         print('!-------------------REPORT rbINT-------------------!')
@@ -387,6 +389,21 @@ class i2cPi:
             pmaxList.append(int(self.writeRead(i)*.39))
         print('PMax Registers. Pmax1: %s%% || Pmax2: %s%% || Pmax3: %s%% || Pmax4: %s%%' %(pmaxList[0], pmaxList[1], pmaxList[2], pmaxList[3]))
         print('Config Register 1. Expected: 0b1x000001 vs. Read: %s' %(bin(self.writeRead(0x40))))
+
+    def rbTempLimits(self, sensor=1):
+        hexAddLow = 0x2a+(2*(sensor-1))
+        hexAddHigh = 0x2b+(2*(sensor-1))
+        '''Read order is low byte, then high byte. A low byte read will FREEZE the high byte register value until both low and high byte are read'''
+        self.bus.write_byte(0x2c, hexAddLow)    
+        lowbyte = self.bus.read_byte(0x2c, hexAddLow)
+        self.bus.write_byte(0x2c, hexAddHigh)
+        highbyte = self.bus.read_byte(0x2c, hexAddHigh) << 8
+        highlowbyte = highbyte | lowbyte    #let's concatenate these bits
+        if highlowbyte == 0xFFFF:
+            print('Fan Error! PWM @ 0%, stalled, blocked, failed, or unpopulated')
+        else:
+            rpm = 5400000 / highlowbyte   #5400000 is from 90kHz clock * 60 sec
+            print("Fan #%s is read at rpm %s" %(fan, int(rpm)))
 
     def configReg1_defaults(self, STRT=0, HF_LF=1, T05_STB=1):
         '''!-INCOMPLETE-! - change to dynamically take in values instead of hard-set values'''
