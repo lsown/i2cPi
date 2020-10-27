@@ -12,9 +12,9 @@ class i2cPi:
 
         #general 038 MCU DAQ configurations
         self.pinsIn = {
-            'displayFlag' : {'name' : 'displayFlag', 'pinType':'interface','state':GPIO.input(22),'priorState':0, 'pin': 22},
-            'adtFlag' : {'name' : 'adtFlag', 'pinType':'interface','state': GPIO.input(14),'priorState':0, 'pin': 14},
-            'maxFlag' : {'name' : 'maxFlag', 'pinType':'interface','state':GPIO.input(25),'priorState':0, 'pin': 25}
+            'displayFlag' : {'name' : 'displayFlag', 'pinType':'interface','state':0,'priorState':0, 'pin': 22},
+            'adtFlag' : {'name' : 'adtFlag', 'pinType':'interface','state': 0,'priorState':0, 'pin': 14},
+            'maxFlag' : {'name' : 'maxFlag', 'pinType':'interface','state':0,'priorState':0, 'pin': 25}
         }
 
         self.pinsOut = {
