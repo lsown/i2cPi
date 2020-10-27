@@ -53,6 +53,9 @@ class i2cPi:
             self.pinsIn[i]['state'] = GPIO.input(self.pinsIn[i]['pin'])
             logging.info('%s initial state is %s' %(self.pinsIn[i]['name'], str(self.pinsIn[i]['state'])))
 
+    def getPinState(self, pin):
+        return GPIO.input(pin)
+
     def updateState(self, channel, value):
         for i in self.pinsIn:
             if channel == self.pinsIn[i]['pin']:
@@ -188,7 +191,7 @@ class i2cPi:
         logging.info('Configured to manual fan control behavior for PWM1-4. Method .setPWM can now be used to manually control fan speeds.')
 
     def setAutoMonitor(self, 
-        tmin1=25, tmin2=25, tmin3=25, tmin4=25, 
+        tmin1=25, tmin2=25, tmin3=25, tmin4=25,
         pmin1=0x40, pmin2=0x40, pmin3=0x40, pmin4=0x40,
         pmax1=0xFF, pmax2=0xFF, pmax3=0xFF, pmax4=0xFF):
         '''tmin value range: 0-255 degrees, pmin & pmax: 0-255 for 0-100% - reference pg.26 of ADT740 for instructions'''
@@ -351,7 +354,10 @@ class i2cPi:
     def rbINT(self):
         print('!-------------------REPORT rbINT-------------------!')
         print('Interrupt Status Register 1 0x41: %s' %bin(self.writeRead(0x41)))
+        print('Interrupt Mask   Register 1 0x72: %s' %bin(self.writeRead(0x72)))
         print('Interrupt Status Register 2 0x42: %s' %bin(self.writeRead(0x42)))
+        print('Interrupt Mask   Register 2 0x73: %s' %bin(self.writeRead(0x73)))
+        print('ALERT Pin state is %s' %self.getPinState(14))
 
     def rbAutoMonitor(self):
         tminList = []
