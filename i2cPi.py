@@ -352,12 +352,16 @@ class i2cPi:
         time.sleep(waitTime)  #wait 200 mS per TMP sensor, in tester board we have 4. Max of 10, so prob ~2 sec max.
         self.bus.write_byte_data(0x2c, 0x74, self.insertBits(0x74, 7, 7, 0b0))   #stop TMP daisy.
         print('rbTempN: Max Temp Register 0x78 is %s from all temp sensors' %self.writeRead(0x78))   #poll max temp
-        count = 1
+        '''count = 1
         try:
             while count < (sensorNumber + 1):
                 hexAddTemp = 0x20 + count - 1
                 logging.info('Temp Register %s is at temp value %s C' %(hex(hexAddTemp), self.writeRead(hexAddTemp)))
-                count+=1        
+                count+=1       '''
+        try:
+            for i in range(1, sensorNumber+1):
+                hexAddTemp = 0x20 + i - 1
+                logging.info('Temp Register %s is at temp value %s C' %(hex(hexAddTemp), self.writeRead(hexAddTemp)))
         except:
             logging.info('Failed temperature polling')
         self.bus.write_byte_data(0x2c, 0x74, self.insertBits(0x74, 7, 7, 0b1))  #re-start TMP daisy. Can comment out if we don't want auto-restart.
@@ -393,7 +397,7 @@ class i2cPi:
     def rbTempLimits(self, sensor=1):
         hexAddLow = 0x44+(2*(sensor-1))
         hexAddHi = 0x45+(2*(sensor-1))
-        logging.info('rbTempLimits: AddLow: %s AddHi: %s' %(hex(hexAddLow), hex(hexAddHi)))
+        #logging.info('rbTempLimits: AddLow: %s AddHi: %s' %(hex(hexAddLow), hex(hexAddHi)))    #self-check on address
         tempLow = self.writeRead(hexAddLow)
         tempHi = self.writeRead(hexAddHi)
         if (tempLow >> 7) == 1: #shift to bit[7], if value = 1, apply negative equation
@@ -402,6 +406,10 @@ class i2cPi:
             tempHi = tempHi - 256
         print('Sensor %s temp limit low: %s & high: %s' %(sensor, tempLow, tempHi))
 
+    def rbTempLimitsGlobal(self):
+        '''Helper to query all 10 at once'''
+        for x in range(1, 11):
+            self.rbTempLimits(x)
 
     def configReg1_defaults(self, STRT=0, HF_LF=1, T05_STB=1):
         '''!-INCOMPLETE-! - change to dynamically take in values instead of hard-set values'''
