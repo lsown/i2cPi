@@ -421,7 +421,7 @@ class i2cPi:
             tempLow = tempLow - 256
         if (tempHi >> 7) == 1:  #shift to bit[7], if value = 1, apply negative equation
             tempHi = tempHi - 256'''
-        print('Sensor %s temp limit low: %s & high: %s' %(sensor, self.tempHextoDec(tempLow), self.tempHextoDec(tempHi)))
+        print('Sensor %s temp limit low: %s & high: %s' %(sensor, self.tempHexToDec(tempLow), self.tempHexToDec(tempHi)))
 
     def rbTempLimitsGlobal(self):
         '''Helper to query all 10 at once'''
