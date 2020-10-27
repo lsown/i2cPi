@@ -353,9 +353,9 @@ class i2cPi:
         print('Interrupt Status Register 2 0x42: %s' %bin(self.writeRead(0x42)))
 
     def rbAutoMonitor(self):
-        print('rbAutoMonitor: PWM Config 1/2 0x68 & 3/4 0x69. Expected: 0xc0 vs. Read 0x68: %s & 0x69: %s.' %(hex(self.writeRead(0x68)), hex(self.writeRead(0x69))))
-        print('rbAutoMonitor: Therm Zone - Fan Assignment. 0x7c Zone 1/2 Expected: 0x12 vs. Read: %s.' %(bin(self.writeRead(0x7c))))
-        print('rbAutoMonitor: Therm Zone - Fan Assignment. 0x7d Zone 3/4 Expected: 0x34 vs. Read: %s.' %(bin(self.writeRead(0x7d))))
+        print('rbAutoMonitor: PWM Config 1/2 0x68 & 3/4 0x69. Expected: 0xc0 vs. Read: %s & %s.' %(hex(self.writeRead(0x68)), hex(self.writeRead(0x69))))
+        print('rbAutoMonitor: Therm Zone - Fan Assignment. 0x7c Zone 1/2 Expected: 0x12 vs. Read: %s.' %(hex(self.writeRead(0x7c))))
+        print('rbAutoMonitor: Therm Zone - Fan Assignment. 0x7d Zone 3/4 Expected: 0x34 vs. Read: %s.' %(hex(self.writeRead(0x7d))))
         tminList = []
         for i in [0x6E, 0x6F, 0x70, 0x71]:  #tminRegList
             tminList.append(self.writeRead(i))
