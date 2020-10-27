@@ -271,10 +271,11 @@ class i2cPi:
                 self.bus.write_byte_data(0x2c, hexAddHigh, tempHigh)   #write tempHigh for all 10
                 if tempLow > 0x89:
                     logging.info('Address %s applied value %sC, hex %s.' %(hex(hexAddLow), tempLow-256, hex(tempLow)))
-                elif tempHigh > 0x89:
-                    logging.info('Address %s applied value %sC hex %s.' %(hex(hexAddHigh), tempHigh-256, hex(tempHigh)))
                 else:
                     logging.info('Address %s applied value %sC, hex %s.' %(hex(hexAddLow), tempLow, hex(tempLow)))
+                if tempHigh > 0x89:
+                    logging.info('Address %s applied value %sC hex %s.' %(hex(hexAddHigh), tempHigh-256, hex(tempHigh)))
+                else:
                     logging.info('Address %s applied value %sC hex %s.' %(hex(hexAddHigh), tempHigh, hex(tempHigh)))
 
         except:
