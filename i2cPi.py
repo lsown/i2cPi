@@ -393,6 +393,7 @@ class i2cPi:
     def rbTempLimits(self, sensor=1):
         hexAddLow = 0x44+(2*(sensor-1))
         hexAddHi = 0x45+(2*(sensor-1))
+        logging.info('rbTempLimits: AddLow: %s AddHi: %s' %(hex(hexAddLow), hex(hexAddHi)))
         tempLow = self.writeRead(hexAddLow)
         tempHi = self.writeRead(hexAddHi)
         if (tempLow >> 7) == 1: #shift to bit[7], if value = 1, apply negative equation
