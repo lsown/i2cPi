@@ -407,9 +407,8 @@ class i2cPi:
         bitEndtoHi = (currentReg >> posHi) << posHi
         logging.info('insertBits: Hi bit[7:%s] from currentReg is %s' %(posHi, bin(bitEndtoHi)))
         bitMask = bitMaskList[posLow]
-        logging.info('insertBits: Low bitmask applied is %s' %bin(bitMask))
         bitLowtoEnd = bitMask & currentReg
-        logging.info('insertBits: Low bit[%s:0] from currentReg is %s' %(posLow, bin(bitLowtoEnd)))
+        logging.info('insertBits: Low bitmask applied is %s, bit[%s:0] from currentReg is %s' %(bin(bitMask), posLow, bin(bitLowtoEnd)))
         bitEnds = bitEndtoHi | bitLowtoEnd
         logging.info('insertBits: Applied final mask is %s' %bin(bitEnds))
         byteLoad = payLoad << posLow | bitEnds
