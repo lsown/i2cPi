@@ -353,21 +353,19 @@ class i2cPi:
         print('Interrupt Status Register 2 0x42: %s' %bin(self.writeRead(0x42)))
 
     def rbAutoMonitor(self):
-        print('rbAutoMonitor: PWM Config - AutoMonitor. Expected: 0b11000000 vs. Read 0x68: %s vs. Read 0x69: %s' %(bin(self.writeRead(0x68)), bin(self.writeRead(0x69))))
-        print('rbAutoMonitor: Therm Zone - Fan Assignment. 0x7c Zone 1/2 Expected: 0b00010010 vs. Read: %s. 0x7d Zone 3/4 Expected: 0b00110100 vs. Read: %s' %(bin(self.writeRead(0x7c)), bin(self.writeRead(0x7d))))
-        tminRegList = [0x6E, 0x6F, 0x70, 0x71]
+        print('rbAutoMonitor: PWM Config 1/2 0x68 & 3/4 0x69. Expected: 0xc0 vs. Read 0x68: %s & 0x69: %s.' %(hex(self.writeRead(0x68)), hex(self.writeRead(0x69))))
+        print('rbAutoMonitor: Therm Zone - Fan Assignment. 0x7c Zone 1/2 Expected: 0x12 vs. Read: %s.' %(bin(self.writeRead(0x7c))))
+        print('rbAutoMonitor: Therm Zone - Fan Assignment. 0x7d Zone 3/4 Expected: 0x34 vs. Read: %s.' %(bin(self.writeRead(0x7d))))
         tminList = []
-        for i in tminRegList:
+        for i in [0x6E, 0x6F, 0x70, 0x71]:  #tminRegList
             tminList.append(self.writeRead(i))
         print('rbAutoMonitor: Tmin1: %s || Tmin2: %s || Tmin3: %s || Tmin4: %s' %(tminList[0], tminList[1], tminList[2], tminList[3]))
-        pminRegList = [0x6A, 0x6B, 0x6C, 0x6D]
         pminList = []
-        for i in pminRegList:
+        for i in [0x6A, 0x6B, 0x6C, 0x6D]:
             pminList.append(int(self.writeRead(i)*.39))
         print('rbAutoMonitor: PMin Registers. Pmin1: %s%% || Pmin2: %s%% || Pmin3: %s%% || Pmin4: %s%%' %(pminList[0], pminList[1], pminList[2], pminList[3]))
-        pmaxRegList = [0x38, 0x39, 0x3A, 0x3B]
         pmaxList = []
-        for i in pmaxRegList:
+        for i in [0x38, 0x39, 0x3A, 0x3B]:
             pmaxList.append(int(self.writeRead(i)*.39))
         print('rbAutoMonitor: PMax Registers. Pmax1: %s%% || Pmax2: %s%% || Pmax3: %s%% || Pmax4: %s%%' %(pmaxList[0], pmaxList[1], pmaxList[2], pmaxList[3]))
         print('rbAutoMonitor: Config Register 1. Expected: 0b1x000001 vs. Read: %s' %(bin(self.writeRead(0x40))))
