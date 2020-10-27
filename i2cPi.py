@@ -349,10 +349,12 @@ class i2cPi:
         self.configReg1_defaults()   #reapply default config
 
     def rbINT(self):
+        print('!-------------------REPORT-------------------!')
         print('Interrupt Status Register 1 0x41: %s' %bin(self.writeRead(0x41)))
         print('Interrupt Status Register 2 0x42: %s' %bin(self.writeRead(0x42)))
 
     def rbAutoMonitor(self):
+        print('!-------------------REPORT-------------------!')
         print('rbAutoMonitor: PWM Config 1/2 0x68 & 3/4 0x69. Expected: 0xc0 vs. Read: %s & %s.' %(hex(self.writeRead(0x68)), hex(self.writeRead(0x69))))
         print('rbAutoMonitor: Therm Zone - Fan Assignment Zone 1/2 0x7c. Expected: 0x12 vs. Read: %s.' %(hex(self.writeRead(0x7c))))
         print('rbAutoMonitor: Therm Zone - Fan Assignment Zone 3/4. 0x7d. Expected: 0x34 vs. Read: %s.' %(hex(self.writeRead(0x7d))))
