@@ -344,7 +344,7 @@ class i2cPi:
             rpm = 5400000 / highlowbyte   #5400000 is from 90kHz clock * 60 sec
             print("Fan #%s is read at rpm %s" %(fan, int(rpm)))
 
-    def rbTempN(self, sensorNumber = 4): #polls max temp and N sensors (up to 10)
+    def rbTempGlobal(self, sensorNumber = 4): #polls max temp and N sensors (up to 10)
         self.bus.write_byte_data(0x2c, 0x74, self.insertBits(0x74, 7, 7, 0b1))  #start TMP daisy.
         logging.info('rbTempN: Starting TMP daisy chain.')
         waitTime = sensorNumber * 0.2   #200 mS / TMP sensor. Max of 10 sensors. 
@@ -391,19 +391,16 @@ class i2cPi:
         print('Config Register 1. Expected: 0b1x000001 vs. Read: %s' %(bin(self.writeRead(0x40))))
 
     def rbTempLimits(self, sensor=1):
-        hexAddLow = 0x2a+(2*(sensor-1))
-        hexAddHigh = 0x2b+(2*(sensor-1))
-        '''Read order is low byte, then high byte. A low byte read will FREEZE the high byte register value until both low and high byte are read'''
-        self.bus.write_byte(0x2c, hexAddLow)    
-        lowbyte = self.bus.read_byte(0x2c, hexAddLow)
-        self.bus.write_byte(0x2c, hexAddHigh)
-        highbyte = self.bus.read_byte(0x2c, hexAddHigh) << 8
-        highlowbyte = highbyte | lowbyte    #let's concatenate these bits
-        if highlowbyte == 0xFFFF:
-            print('Fan Error! PWM @ 0%, stalled, blocked, failed, or unpopulated')
-        else:
-            rpm = 5400000 / highlowbyte   #5400000 is from 90kHz clock * 60 sec
-            print("Fan #%s is read at rpm %s" %(fan, int(rpm)))
+        hexAddLow = 0x44+(2*(sensor-1))
+        hexAddHi = 0x45+(2*(sensor-1))
+        tempLow = self.writeRead(hexAddLow)
+        tempHi = self.writeRead(hexAddHi)
+        if (tempLow >> 7) == 1: #shift to bit[7], if value = 1, apply negative equation
+            tempLow = tempLow - 256
+        if (tempHi >> 7) == 1:  #shift to bit[7], if value = 1, apply negative equation
+            tempHi = tempHi - 256
+        print('Sensor %s temp limit low: %s & high: %s' %(sensor, tempLow, tempHi))
+
 
     def configReg1_defaults(self, STRT=0, HF_LF=1, T05_STB=1):
         '''!-INCOMPLETE-! - change to dynamically take in values instead of hard-set values'''
@@ -424,13 +421,13 @@ class i2cPi:
         currentReg = self.writeRead(regAddress)
         posHi = posHi + 1   #shift it up by one
         bitEndtoHi = (currentReg >> posHi) << posHi
-        logging.info('insertBits: Hi bit[7:%s] from currentReg is %s' %(posHi, bin(bitEndtoHi)))
+        #logging.info('insertBits: Hi bit[7:%s] from currentReg is %s' %(posHi, bin(bitEndtoHi)))
         bitMask = bitMaskList[posLow]
         bitLowtoEnd = bitMask & currentReg
-        logging.info('insertBits: Low bitmask applied is %s, bit[%s:0] from currentReg is %s' %(bin(bitMask), posLow, bin(bitLowtoEnd)))
-        bitEnds = bitEndtoHi | bitLowtoEnd
+        #logging.info('insertBits: Low bitmask applied is %s, bit[%s:0] from currentReg is %s' %(bin(bitMask), posLow, bin(bitLowtoEnd)))
+        bitEnds = bitEndtoHi | bitLowtoEnd  #re-combine prior value with to-be-inserted region zeroed out
         logging.info('insertBits: Applied final mask is %s' %bin(bitEnds))
-        byteLoad = payLoad << posLow | bitEnds
+        byteLoad = payLoad << posLow | bitEnds  #shift payload into position & then combine with bitEnds
         logging.info('insertBits: Final byteload with insertion is %s' %bin(byteLoad))
         return byteLoad
 
