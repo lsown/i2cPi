@@ -190,22 +190,28 @@ class i2cPi:
         elif mode == 'manual':
             payload = 0 #value 0 sets to manual
         if fan == 'all':
-            self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 7, 6, payload))  #set man fan control mode for PWM 1 & 2
-            self.validateRegister(0x68, 0x00)
-            self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 7, 6, payload))  #set man fan control mode for PWM 3 & 4
+            self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 7, 7, payload))  #set man fan control mode for PWM 1 & 2.
+            self.validateRegister(0x68, self.insertBits(0x68, 7, 7, payload))
+            self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 6, 6, payload))  #set man fan control mode PWM 2
+            self.validateRegister(0x68, self.insertBits(0x68, 6, 6, payload)
+            self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 7, 7, payload))  #set man fan control mode for PWM 3 & 4
+            self.validateRegister(0x69, self.insertBits(0x69, 7, 7, payload)
+            self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 6, 6, payload))  #set man fan control mode for PWM 3 & 4
+            self.validateRegister(0x69, self.insertBits(0x69, 6, 6, payload)
+
             self.validateRegister(0x69, 0x00)
         elif fan == 1:
             self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 7, 7, payload))  #set man fan control mode PWM 1
-            self.validateRegister(0x68, 0x00)
+            self.validateRegister(0x68, self.insertBits(0x68, 7, 7, payload))
         elif fan == 2:
             self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 6, 6, payload))  #set man fan control mode PWM 2
-            self.validateRegister(0x68, 0x00)
+            self.validateRegister(0x68, self.insertBits(0x68, 6, 6, payload))
         elif fan == 3:
             self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 7, 7, payload))  #set man fan control mode PWM 3
-            self.validateRegister(0x69, 0x00)
+            self.validateRegister(0x69, self.insertBits(0x69, 7, 7, payload))
         elif fan == 4:
             self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 6, 6, payload))  #set man fan control mode PWM 4
-            self.validateRegister(0x69, 0x00)
+            self.validateRegister(0x69, self.insertBits(0x69, 6, 6, payload))
         else:
             logging.info('Invalid entry, no changes applied. Enter "all", 1, 2, 3, or 4.')
             return None
