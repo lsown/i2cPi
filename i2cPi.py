@@ -98,13 +98,16 @@ class i2cPi:
             logging.info('Error 121 - Remote I/O Error on address 77 - TCA9548')
 
     def adtEN(self, wantedState = 'on'):
-        #Bit value 0: ON, 1 OFF on bit7 of register 0x74
+        '''Arguments: 'on' | 'off' - Register 0x74'''
         if wantedState == 'on':
-            payLoad = 0b0   
+            payLoad = 0b0   #value 0 = ON
         elif wantedState == 'off':
-            payLoad = 0b1   
+            payLoad = 0b1   #value 1 = OFF
+        else:
+            print('Bad argument... only "on" or "off" accepted.')
+            return None
         self.bus.write_byte_data(0x2c, 0x74, self.insertBits(0x74, 7, 7, payLoad))
-        print('ADT7470 configured to %s , %s set on bit 7 of register 0x74' %(wantedState, bin(payLoad)))
+        print('ADT7470 configured to %s , %s set on bit 7 of register 0x74.' %(wantedState, bin(payLoad)))
 
     def configFansGlobal(self, 
     freqRange = "low", freqBits = 0b111, fanType='3-wire', fan_PPRev='all', pulseRev = 2,
@@ -210,6 +213,7 @@ class i2cPi:
         pmin1=0x40, pmin2=0x40, pmin3=0x40, pmin4=0x40,
         pmax1=0xFF, pmax2=0xFF, pmax3=0xFF, pmax4=0xFF,
         ):
+        
         '''tmin value range: 0-255 degrees, pmin & pmax: 0-255 for 0-100% - reference pg.26 of ADT740 for instructions'''
         '''!--TBD--! Probably want to eventually separate min / max registers into their own configurable methods''' 
         #Configure to automatic fan control in PWM1/2 & PWM3/4 registers
@@ -220,6 +224,7 @@ class i2cPi:
         self.bus.write_byte_data(0x2c, 0x7D, 0x34)  #Assign 0x22 TMP sensor to Fan3, 0x23 TMP to Fan4
         logging.info('Hard-set assigned TMP01, 02, 03, 04 to Fan01, 02, 03, 04, respectively')
         #When temp exceeds Tmin, fan runs at PWMin. Increases to max speed PWMax at Tmin + 20C
+        '''!---ALERT--! When writing here, note -127 to 127 range with bit[7] representing negative value.'''
         self.bus.write_byte_data(0x2c, 0x6E, tmin1)  #Temp Tmin1 register
         self.bus.write_byte_data(0x2c, 0x6F, tmin2)  #Temp Tmin2 register
         self.bus.write_byte_data(0x2c, 0x70, tmin3)  #Temp Tmin3 register
@@ -412,11 +417,11 @@ class i2cPi:
         #logging.info('rbTempLimits: AddLow: %s AddHi: %s' %(hex(hexAddLow), hex(hexAddHi)))    #self-check on address
         tempLow = self.writeRead(hexAddLow)
         tempHi = self.writeRead(hexAddHi)
-        if (tempLow >> 7) == 1: #shift to bit[7], if value = 1, apply negative equation
+        '''if (tempLow >> 7) == 1: #shift to bit[7], if value = 1, apply negative equation
             tempLow = tempLow - 256
         if (tempHi >> 7) == 1:  #shift to bit[7], if value = 1, apply negative equation
-            tempHi = tempHi - 256
-        print('Sensor %s temp limit low: %s & high: %s' %(sensor, tempLow, tempHi))
+            tempHi = tempHi - 256'''
+        print('Sensor %s temp limit low: %s & high: %s' %(sensor, self.tempHextoDec(tempLow), self.tempHextoDec(tempHi)))
 
     def rbTempLimitsGlobal(self):
         '''Helper to query all 10 at once'''
@@ -451,6 +456,23 @@ class i2cPi:
         byteLoad = payLoad << posLow | bitEnds  #shift payload into position & then combine with bitEnds
         logging.info('insertBits: Final byteload with insertion is %s' %bin(byteLoad))
         return byteLoad
+
+    def tempDecToHex(self, tempDec):
+        if tempDec < 0:
+            tempHex = tempDec + 256
+            logging.info('tempDecToHex: Negative value detected - converting to hex analog.')
+            return tempHex
+        else:
+            return tempDec
+
+    def tempHexToDec(self, tempHex):
+        if (tempHex >> 7) == 1: #shift to bit[7], if value = 1, apply negative equation
+            tempDec = tempHex - 256
+            logging.info('tempHextoDec: Negative value detected - converting to decimal analog.')
+            return tempDec
+        else:
+            logging.info('tempHextoDec: Positive value detected - no conversion.')
+            return tempHex
 
     def writeRead(self, pointerAddress):
         self.bus.write_byte(0x2c, pointerAddress)
