@@ -274,8 +274,6 @@ class i2cPi:
         except:
             logging.info('Failed to set temp limits')
 
-
-
     def setTachLimitsGlobal(self, minRPM ='min', maxRPM='max'):
         for fan in range(1, 5):
             self.setTachLimits(fan, minRPM, maxRPM)
