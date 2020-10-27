@@ -313,11 +313,13 @@ class i2cPi:
             %(fan, hex(hexMaxAddHigh), hex(tachMaxHighB), hex(self.writeRead(hexMaxAddHigh))))
         logging.info('Configured tach range to %s - %s' %(minRPM, maxRPM))
 
-    def setINTmask(self, pointerAddress, bitName, maskEN = 1):
+    def setINTmask(self, bitName, maskEN = 1):
+        '''Reference dictionary below for ALERT to mask based on bitname. Setting maskEN 1 masks the alert, 0 removes the mask. Use this to quiet the alert until it is resolved and to allow other error states to signal the alert'''
         masks = {'R7T': {'pointer':0x72, 'bitPos': 6}, 'R6T': {'pointer':0x72, 'bitPos': 5}, 'R5T': {'pointer':0x72, 'bitPos': 4}, 'R4T': {'pointer':0x72, 'bitPos': 3}, 'R3T': {'pointer':0x72, 'bitPos': 2}, 'R2T': {'pointer':0x72, 'bitPos': 1}, 'R1T': {'pointer':0x72, 'bitPos': 0}, 'fan4': {'pointer':0x73, 'bitPos': 7}, 'fan3': {'pointer':0x73, 'bitPos': 6}, 'fan2': {'pointer':0x73, 'bitPos': 5}, 'fan1': {'pointer':0x73, 'bitPos': 4}, 'daisy': {'pointer':0x73, 'bitPos': 3}, 'R10T': {'pointer':0x73, 'bitPos': 2}, 'R9T': {'pointer':0x73, 'bitPos': 1}, 'R8T': {'pointer':0x73, 'bitPos': 0}}
-        newRegVal = self.insertBits(masks[bitName]['pointer'], masks[bitName]['bitPos'], masks[bitName]['bitPos'], maskEN)
+        newRegVal = self.insertBits(masks[bitName]['pointer'], masks[bitName]['bitPos'], masks[bitName]['bitPos'], maskEN)  #insert maskEN value into its position within the registry.
         self.bus.write_byte_data(0x2c, masks[bitName]['pointer'], newRegVal)
         self.validateRegister(masks[bitName]['pointer'], newRegVal)
+        logging.info('Set mask value for %s to %s' %(bitName, maskEN))
 
     def rbPWM(self):
         for fanRegister in [0x32, 0x33, 0x34, 0x35]:
