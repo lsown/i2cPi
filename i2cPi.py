@@ -358,17 +358,17 @@ class i2cPi:
         tminRegList = [0x6E, 0x6F, 0x70, 0x71]
         tminList = []
         for i in tminRegList:
-            tminList += self.writeRead(i)
+            tminList.append(self.writeRead(i))
         print('rbAutoMonitor: Tmin1: %s || Tmin2: %s || Tmin3: %s || Tmin4: %s' %(tminList[0], tminList[1], tminList[2], tminList[3]))
         pminRegList = [0x6A, 0x6B, 0x6C, 0x6D]
         pminList = []
         for i in pminRegList:
-            pminList += int(self.writeRead(i)*.39)
+            pminList.append(int(self.writeRead(i)*.39))
         print('rbAutoMonitor: PMin Registers. Pmin1: %s%% || Pmin2: %s%% || Pmin3: %s%% || Pmin4: %s%%' %(pminList[0], pminList[1], pminList[2], pminList[3]))
         pmaxRegList = [0x38, 0x39, 0x3A, 0x3B]
         pmaxList = []
         for i in pmaxRegList:
-            pmaxList += int(self.writeRead(i)*.39)
+            pmaxList.append(int(self.writeRead(i)*.39))
         print('rbAutoMonitor: PMax Registers. Pmax1: %s%% || Pmax2: %s%% || Pmax3: %s%% || Pmax4: %s%%' %(pmaxList[0], pmaxList[1], pmaxList[2], pmaxList[3]))
         print('rbAutoMonitor: Config Register 1. Expected: 0b1x000001 vs. Read: %s' %(bin(self.writeRead(0x40))))
 
