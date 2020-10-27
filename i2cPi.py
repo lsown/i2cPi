@@ -274,11 +274,13 @@ class i2cPi:
 
     def setTachLimits(self, fan = 1, minRPM = 'min', maxRPM = 'max'):
         #Default register sets min and max at furthest range, so does not trigger SMBALERT
-        '''!ALERT! - register is 0x58 - 0x67. This register is a bit nasty. 
+        '''!ALERT! 
         We need to update this register as the fan controller monitor adjusts PWM up and down in response to temperature, otherwise... these registers may flag.
         
-        We'll need to map the normal PWM duty cycle, frequency, and tachometer readback in a real use case
-        to determine fan behavior @ various PWM cycles to control for when alert flags occur.'''
+        We'll need to map normal PWM duty cycle, frequency, and tachometer readback in a real use case
+        to determine fan behavior @ various PWM cycles to control for when alert flags occur.
+        
+        Register for fan tachs: 0x58 - 0x67.'''
 
         hexMinAddLow = 0x58+(2*(fan-1))
         hexMinAddHigh = 0x59+(2*(fan-1))
@@ -315,10 +317,10 @@ class i2cPi:
 
     def setINTmask(self, bitName, maskEN = 1):
         '''Reference dictionary below for ALERT to mask based on bitname. Setting maskEN 1 masks the alert, 0 removes the mask. Use this to quiet the alert until it is resolved and to allow other error states to signal the alert'''
-        masks = {'R7T': {'pointer':0x72, 'bitPos': 6}, 'R6T': {'pointer':0x72, 'bitPos': 5}, 'R5T': {'pointer':0x72, 'bitPos': 4}, 'R4T': {'pointer':0x72, 'bitPos': 3}, 'R3T': {'pointer':0x72, 'bitPos': 2}, 'R2T': {'pointer':0x72, 'bitPos': 1}, 'R1T': {'pointer':0x72, 'bitPos': 0}, 'fan4': {'pointer':0x73, 'bitPos': 7}, 'fan3': {'pointer':0x73, 'bitPos': 6}, 'fan2': {'pointer':0x73, 'bitPos': 5}, 'fan1': {'pointer':0x73, 'bitPos': 4}, 'daisy': {'pointer':0x73, 'bitPos': 3}, 'R10T': {'pointer':0x73, 'bitPos': 2}, 'R9T': {'pointer':0x73, 'bitPos': 1}, 'R8T': {'pointer':0x73, 'bitPos': 0}}
-        newRegVal = self.insertBits(masks[bitName]['pointer'], masks[bitName]['bitPos'], masks[bitName]['bitPos'], maskEN)  #insert maskEN value into its position within the registry.
-        self.bus.write_byte_data(0x2c, masks[bitName]['pointer'], newRegVal)
-        self.validateRegister(masks[bitName]['pointer'], newRegVal)
+        masks = {'temp7': {'register':0x72, 'bitPos': 6}, 'temp6': {'register':0x72, 'bitPos': 5}, 'temp5': {'register':0x72, 'bitPos': 4}, 'temp4': {'register':0x72, 'bitPos': 3}, 'temp3': {'register':0x72, 'bitPos': 2}, 'temp2': {'register':0x72, 'bitPos': 1}, 'temp1': {'register':0x72, 'bitPos': 0}, 'fan4': {'register':0x73, 'bitPos': 7}, 'fan3': {'register':0x73, 'bitPos': 6}, 'fan2': {'register':0x73, 'bitPos': 5}, 'fan1': {'register':0x73, 'bitPos': 4}, 'daisy': {'register':0x73, 'bitPos': 3}, 'temp10': {'register':0x73, 'bitPos': 2}, 'temp9': {'register':0x73, 'bitPos': 1}, 'temp8': {'register':0x73, 'bitPos': 0}}
+        newRegVal = self.insertBits(masks[bitName]['register'], masks[bitName]['bitPos'], masks[bitName]['bitPos'], maskEN)  #insert maskEN value into its position within the registry.
+        self.bus.write_byte_data(0x2c, masks[bitName]['register'], newRegVal)
+        self.validateRegister(masks[bitName]['register'], newRegVal)
         logging.info('Set mask value for %s to %s' %(bitName, maskEN))
 
     def rbPWM(self):
