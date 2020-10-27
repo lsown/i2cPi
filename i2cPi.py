@@ -155,7 +155,7 @@ class i2cPi:
                 duty8bit = 255
             if (fan >= 1 and fan <= 4):
                 self.bus.write_byte_data(0x2c, fanRegister, duty8bit) #set PWM for fan
-                time.sleep(0.1)    #some delay needed for the registry to refresh from stale.
+                time.sleep(0.1)    #!--IMPORTANT--! Experimentally determined - ~ 0.1 delay needed for registry to refresh from stale.
                 readByte = self.bus.read_byte(0x2c, 0x00)
                 self.validateRegister(fanRegister, duty8bit)
                 print('PWM%s Register %s is set to %s hex, i.e. %s percent' %(fan, hex(fanRegister), hex(readByte), (readByte*0.39)))
@@ -183,7 +183,7 @@ class i2cPi:
         self.validateRegister(0x43, newRegVal)
         print("Configured Fan %s for %s pulses per revolution" %(fan, pulseRev))        
 
-    def setManualModeAll(self):
+    def setManualModeGlobal(self):
         self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 7, 6, 0b00))  #set man fan control mode PWM 1 & 2
         self.validateRegister(0x68, 0x00)
         self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 7, 6, 0b00))  #set man fan control mode PWM 1 & 2
@@ -249,7 +249,7 @@ class i2cPi:
         default power-on values is -127C (0x81) & 127C (0x7F), these are min / max range.
         MSB [bit7] signifies negative temp, use equation: bit[6:0] - 256.
         Register value is: 0x44 - 0x57.'''
-        count = 1
+        '''count = 1
         try:
             while count < (sensors + 1):
                 hexAddLow = 0x44+(2*(count-1))
@@ -258,7 +258,25 @@ class i2cPi:
                 logging.info('Address %s applied value %s' %(hex(hexAddLow), hex(tempLow)))
                 self.bus.write_byte_data(0x2c, hexAddHigh, tempHigh)   #write tempHigh for all 10
                 logging.info('Address %s applied value %s' %(hex(hexAddHigh), hex(tempHigh)))
-                count += 1
+                count += 1'''
+        if tempLow < 0:
+            tempLow = tempLow + 256
+        if tempHigh < 0:
+            tempHigh = tempHigh + 256
+        try:
+            for i in range(1, (sensors + 1)):
+                hexAddLow = 0x44+(2*(i-1))
+                hexAddHigh = 0x45+(2*(i-1))
+                self.bus.write_byte_data(0x2c, hexAddLow, tempLow)   #write tempLow for all 10
+                self.bus.write_byte_data(0x2c, hexAddHigh, tempHigh)   #write tempHigh for all 10
+                if tempLow > 0x89:
+                    logging.info('Address %s applied value %sC, hex %s.' %(hex(hexAddLow), tempLow-256, hex(tempLow)))
+                elif tempHigh > 0x89:
+                    logging.info('Address %s applied value %sC hex %s.' %(hex(hexAddHigh), tempHigh-256, hex(tempHigh)))
+                else:
+                    logging.info('Address %s applied value %sC, hex %s.' %(hex(hexAddLow), tempLow, hex(tempLow)))
+                    logging.info('Address %s applied value %sC hex %s.' %(hex(hexAddHigh), tempHigh, hex(tempHigh)))
+
         except:
             logging.info('Failed to set temp limits')
 
@@ -267,10 +285,8 @@ class i2cPi:
         return None
 
     def setTachLimitsGlobal(self, minRPM ='min', maxRPM='max'):
-        self.setTachLimits(1, minRPM, maxRPM)
-        self.setTachLimits(2, minRPM, maxRPM)
-        self.setTachLimits(3, minRPM, maxRPM)
-        self.setTachLimits(4, minRPM, maxRPM)
+        for fan in range(1, 5):
+            self.setTachLimits(fan, minRPM, maxRPM)
 
     def setTachLimits(self, fan = 1, minRPM = 'min', maxRPM = 'max'):
         #Default register sets min and max at furthest range, so does not trigger SMBALERT
@@ -346,22 +362,15 @@ class i2cPi:
 
     def rbTempGlobal(self, sensorNumber = 4): #polls max temp and N sensors (up to 10)
         self.bus.write_byte_data(0x2c, 0x74, self.insertBits(0x74, 7, 7, 0b1))  #start TMP daisy.
-        logging.info('rbTempN: Starting TMP daisy chain.')
         waitTime = sensorNumber * 0.2   #200 mS / TMP sensor. Max of 10 sensors. 
-        print('rbTempN: Waiting for %s seconds to gather TMP05 data' %waitTime)
+        logging.info('rbTempN: Config 0x74 to start TMP Daisy. Waiting for %s seconds to gather TMP05 data' %waitTime)
         time.sleep(waitTime)  #wait 200 mS per TMP sensor, in tester board we have 4. Max of 10, so prob ~2 sec max.
         self.bus.write_byte_data(0x2c, 0x74, self.insertBits(0x74, 7, 7, 0b0))   #stop TMP daisy.
         print('rbTempN: Max Temp Register 0x78 is %s from all temp sensors' %self.writeRead(0x78))   #poll max temp
-        '''count = 1
-        try:
-            while count < (sensorNumber + 1):
-                hexAddTemp = 0x20 + count - 1
-                logging.info('Temp Register %s is at temp value %s C' %(hex(hexAddTemp), self.writeRead(hexAddTemp)))
-                count+=1       '''
         try:
             for i in range(1, sensorNumber+1):
                 hexAddTemp = 0x20 + i - 1
-                logging.info('Temp Register %s is at temp value %s C' %(hex(hexAddTemp), self.writeRead(hexAddTemp)))
+                print('Temp Register %s is at temp value %s C' %(hex(hexAddTemp), self.writeRead(hexAddTemp)))
         except:
             logging.info('Failed temperature polling')
         self.bus.write_byte_data(0x2c, 0x74, self.insertBits(0x74, 7, 7, 0b1))  #re-start TMP daisy. Can comment out if we don't want auto-restart.
