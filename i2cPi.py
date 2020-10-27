@@ -244,21 +244,15 @@ class i2cPi:
         '''!---PLACEHOLDER---! For individually setting pmax / fan'''
         return None
 
-    def setTempLimitsGlobal(self, tempLow = 0x4, tempHigh = 0x50, sensors = 4):
+    def setTempLimits(self, tempLow = 0x4, tempHigh = 0x50, sensorNumber = 1):
+        '''!---PLACEHOLDER---! For individually setting temperature zones'''
+        return None
+
+    def setTempLimitsGlobal(self, tempLow = 4, tempHigh = 50, sensors = 4):
         '''Method sets global tempLow & tempHigh for sensors 1-10 to same value.
         default power-on values is -127C (0x81) & 127C (0x7F), these are min / max range.
         MSB [bit7] signifies negative temp, use equation: bit[6:0] - 256.
         Register value is: 0x44 - 0x57.'''
-        '''count = 1
-        try:
-            while count < (sensors + 1):
-                hexAddLow = 0x44+(2*(count-1))
-                hexAddHigh = 0x45+(2*(count-1))
-                self.bus.write_byte_data(0x2c, hexAddLow, tempLow)   #write tempLow for all 10
-                logging.info('Address %s applied value %s' %(hex(hexAddLow), hex(tempLow)))
-                self.bus.write_byte_data(0x2c, hexAddHigh, tempHigh)   #write tempHigh for all 10
-                logging.info('Address %s applied value %s' %(hex(hexAddHigh), hex(tempHigh)))
-                count += 1'''
         if tempLow < 0:
             tempLow = tempLow + 256
         if tempHigh < 0:
@@ -277,13 +271,10 @@ class i2cPi:
                     logging.info('Temp %s high limit - Address %s: applied value %sC hex %s.' %(i, hex(hexAddHigh), tempHigh-256, hex(tempHigh)))
                 else:
                     logging.info('Temp %s high limit - Address %s: applied value %sC hex %s.' %(i, hex(hexAddHigh), tempHigh, hex(tempHigh)))
-
         except:
             logging.info('Failed to set temp limits')
 
-    def setTempLimits(self, tempLow = 0x4, tempHigh = 0x50, sensorNumber = 1):
-        '''!---PLACEHOLDER---! For individually setting temperature zones'''
-        return None
+
 
     def setTachLimitsGlobal(self, minRPM ='min', maxRPM='max'):
         for fan in range(1, 5):
@@ -293,10 +284,8 @@ class i2cPi:
         #Default register sets min and max at furthest range, so does not trigger SMBALERT
         '''!ALERT! 
         We need to update this register as the fan controller monitor adjusts PWM up and down in response to temperature, otherwise... these registers may flag.
-        
         We'll need to map normal PWM duty cycle, frequency, and tachometer readback in a real use case
         to determine fan behavior @ various PWM cycles to control for when alert flags occur.
-        
         Register for fan tachs: 0x58 - 0x67.'''
 
         hexMinAddLow = 0x58+(2*(fan-1))
