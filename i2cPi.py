@@ -190,6 +190,7 @@ class i2cPi:
             payload = 1 #value 1 sets to auto
         elif mode == 'manual':
             payload = 0 #value 0 sets to manual
+            logging.info('Note: post-configuration to manual mode, use method setPWM to adjust fan speed.')
         if fan == 'all':
             for i in range(1, 5):
                 writeVal = self.insertBits(pwmDict[i]['register'], pwmDict[i]['bitPos'], pwmDict[i]['bitPos'], payload)
@@ -202,8 +203,7 @@ class i2cPi:
         else:
             logging.info('Invalid entry, no changes applied. Enter all, 1, 2, 3, or 4.')
             return None
-        logging.info('Configured to %s fan control behavior for PWM %s. If in manual mode, use method setPWM.' %(mode,fan))
-
+        logging.info('Configured to %s fan control behavior for PWM %s.' %(mode,fan))
 
     def setAutoMonitorGlobal(self, 
         tmin1=25, tmin2=25, tmin3=25, tmin4=25,
