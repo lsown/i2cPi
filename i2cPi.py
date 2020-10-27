@@ -183,12 +183,26 @@ class i2cPi:
         self.validateRegister(0x43, newRegVal)
         print("Configured Fan %s for %s pulses per revolution" %(fan, pulseRev))        
 
-    def setManualModeGlobal(self):
-        self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 7, 6, 0b00))  #set man fan control mode PWM 1 & 2
-        self.validateRegister(0x68, 0x00)
-        self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 7, 6, 0b00))  #set man fan control mode PWM 1 & 2
-        self.validateRegister(0x69, 0x00)
-        logging.info('Configured to manual fan control behavior for PWM1-4. Method .setPWM can now be used to manually control fan speeds.')
+    def setManualMode(self, fan ='all'):
+        '''Change to manual SW fan control mode, use method setPWM to adjust PWM duty cycle.'''
+        if fan == 'all':
+            self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 7, 6, 0b00))  #set man fan control mode for PWM 1 & 2
+            self.validateRegister(0x68, 0x00)
+            self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 7, 6, 0b00))  #set man fan control mode for PWM 3 & 4
+            self.validateRegister(0x69, 0x00)
+        elif fan == 1:
+            self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 7, 7, 0))  #set man fan control mode PWM 1
+        elif fan == 2:
+            self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 6, 6, 0))  #set man fan control mode PWM 2
+        elif fan == 3:
+            self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 7, 7, 0))  #set man fan control mode PWM 3
+        elif fan == 4:
+            self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 6, 6, 0))  #set man fan control mode PWM 4
+        else:
+            logging.info('Invalid entry, no changes applied. Enter "all", 1, 2, 3, or 4.')
+            return None
+        logging.info('Configured to manual fan control behavior for PWM %s. Method setPWM can now be used to manually control fan speeds.' %fan)
+
 
     def setAutoMonitor(self, 
         tmin1=25, tmin2=25, tmin3=25, tmin4=25,
