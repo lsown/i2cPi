@@ -354,8 +354,8 @@ class i2cPi:
 
     def rbAutoMonitor(self):
         print('rbAutoMonitor: PWM Config 1/2 0x68 & 3/4 0x69. Expected: 0xc0 vs. Read: %s & %s.' %(hex(self.writeRead(0x68)), hex(self.writeRead(0x69))))
-        print('rbAutoMonitor: Therm Zone - Fan Assignment. 0x7c Zone 1/2 Expected: 0x12 vs. Read: %s.' %(hex(self.writeRead(0x7c))))
-        print('rbAutoMonitor: Therm Zone - Fan Assignment. 0x7d Zone 3/4 Expected: 0x34 vs. Read: %s.' %(hex(self.writeRead(0x7d))))
+        print('rbAutoMonitor: Therm Zone - Fan Assignment Zone 1/2 0x7c. Expected: 0x12 vs. Read: %s.' %(hex(self.writeRead(0x7c))))
+        print('rbAutoMonitor: Therm Zone - Fan Assignment Zone 3/4. 0x7d. Expected: 0x34 vs. Read: %s.' %(hex(self.writeRead(0x7d))))
         tminList = []
         for i in [0x6E, 0x6F, 0x70, 0x71]:  #tminRegList
             tminList.append(self.writeRead(i))
@@ -404,34 +404,3 @@ class i2cPi:
         self.bus.write_byte(0x2c, pointerAddress)
         return self.bus.read_byte(0x2c, pointerAddress)
     
-
-
-    '''
-    !-- old junk code, archived --!
-    elif fan == 1:
-        writeRegVal = pulseCode & currentPulseReg
-    elif fan ==2:
-        bit7to4 = (currentPulseReg >> 4) << 4
-        logging.info('bit[7:4] is %s' %bin(bit7to4))
-        bit0to1 = 0b11 & currentPulseReg   #mask off to grab bits 3:0
-        logging.info('bit[0:1] is %s' %bin(bit0to1))
-        bitEnds = bit7to4 | bit0to1    #combine bit 7 and bits 0-3, leaving bits 6-4 empty
-        logging.info('bitEnds is %s' %bin(bitEnds))
-        writeRegVal = (pulseCode << 2) | bitEnds
-    elif fan == 3:
-        bit7to6 = (currentPulseReg >> 6) << 6
-        logging.info('bit[7:6] is %s' %bin(bit7to6))
-        bit0to3 = 0b1111 & currentPulseReg   #mask off to grab bits 3:0
-        logging.info('bit[0:3] is %s' %bin(bit0to3))
-        bitEnds = bit7to6 | bit0to3    #combine bit 7 and bits 0-3, leaving bits 6-4 empty
-        logging.info('bitEnds is %s' %bin(bitEnds))
-        writeRegVal = (pulseCode << 4) | bitEnds
-    elif fan == 4:
-        bit9to7 = (currentPulseReg >> 8) << 8
-        logging.info('bit[9:7] is %s' %bin(bit9to7))
-        bit0to5 = 0b111111 & currentPulseReg   #mask off to grab bits 3:0
-        logging.info('bit[0:3] is %s' %bin(bit0to5))
-        bitEnds = bit9to7 | bit0to5    #combine bit 7 and bits 0-3, leaving bits 6-4 empty
-        logging.info('bitEnds is %s' %bin(bitEnds))
-        writeRegVal = (pulseCode << 6) | bitEnds
-    '''
