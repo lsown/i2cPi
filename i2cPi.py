@@ -432,7 +432,7 @@ class i2cPi:
     def validateRegister(self, wantedReg, wantedVal):  #assumes a prior write has been performed so pointer address previously set
         readback = self.bus.read_byte(0x2c, 0x00)
         if wantedVal == readback:
-            print('Register %s value: (%s, %s, %s)' %(hex(wantedReg), hex(wantedVal), bin(wantedVal), wantedVal))
+            print('Validated W/R - Register %s value: (%s, %s, %s)' %(hex(wantedReg), hex(wantedVal), bin(wantedVal), wantedVal))
         else:
             print('!--ERROR--! Register %s value is %s, not %s wanted' %(hex(wantedReg),readback, wantedVal))
 
