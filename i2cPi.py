@@ -106,7 +106,7 @@ class i2cPi:
     def configFansGlobal(self, 
     freqRange = "low", freqBits = 0b111, fanType='3-wire', fan_PPRev='all', pulseRev = 2,
     tempLow = 0x4, tempHigh = 0x50, sensors = 4,
-    minRPM = 'min', maxRPM = 'max'
+    minRPM = 1000, maxRPM = 'max'
     ):    
         self.setFreq(freqRange, freqBits, fanType)  #configure low frequency mode, monitoring, & 88.2 Hz
         self.setPPRev(fan_PPRev, pulseRev) #configures pulses per RPM
@@ -353,14 +353,52 @@ class i2cPi:
         print('Interrupt Status Register 2 0x42: %s' %bin(self.writeRead(0x42)))
 
     def rbAutoMonitor(self):
-        '''Configure to automatic fan control in PWM1/2 & PWM3/4 registers'''
-        self.writeRead(0x68)  #set to automatic fan control mode PWM 1 & 2
-        self.writeRead(0x69)  #set to automatic fan control mode PWM 3 & 4
-        logging.info('Configuring to automatic fan control behavior for PWM1-4')
-        #Assign tmp sensors to each fan
-        bin(self.writeRead(0x7c))  #Assign 0x20 TMP sensor to Fan1, 0x21 TMP to Fan2
-        bin(self.writeRead(0x7d))  #Assign 0x22 TMP sensor to Fan3, 0x23 TMP to Fan4
+        print('rbAutoMonitor: PWM Config - AutoMonitor. Expected: 0b11000000 vs. Read 0x68: %s vs. Read 0x69: %s' %(bin(self.writeRead(0x68), bin(self.writeRead(0x69)))))
+        print('rbAutoMonitor: Therm Zone - Fan Assignment. 0x7c Zone 1/2 Expected: 0b00010010 vs. Read: %s. 0x7d Zone 3/4 Expected: 0b00110100 vs. Read: %s' %(bin(self.writeRead(0x7c), bin(self.writeRead(0x7d)))))
+        tminRegList = [0x6E, 0x6F, 0x70, 0x71]
+        tminList = []
+        for i in tminRegList:
+            tminList += self.writeRead(tminRegList[i])
+        print('rbAutoMonitor: Tmin1: %s || Tmin2: %s || Tmin3: %s || Tmin4: %s' %(tminList[0], tminList[1], tminList[2], tminList[3]))
+        pminRegList = [0x6A, 0x6B, 0x6C, 0x6D]
+        pminList = []
+        for i in pminRegList:
+            pminList += int(self.writeRead(pminRegList[i])*.39)
+        print('rbAutoMonitor: PMin Registers. Pmin1: %s%% || Pmin2: %s%% || Pmin3: %s%% || Pmin4: %s%%' %(pminList[0], pminList[1], pminList[2], pminList[3]))
+        pmaxRegList = [0x38, 0x39, 0x3A, 0x3B]
+        pmaxList = []
+        for i in pmaxRegList:
+            pmaxList += int(self.writeRead(pmaxRegList[i])*.39)
+        print('rbAutoMonitor: PMax Registers. Pmax1: %s%% || Pmax2: %s%% || Pmax3: %s%% || Pmax4: %s%%' %(pmaxList[0], pmaxList[1], pmaxList[2], pmaxList[3]))
+        print('rbAutoMonitor: Config Register 1. Expected: 0b1x000001 vs. Read: %s' %(bin(self.writeRead(0x40))))
 
+        #Assign tmp sensors to each fan  
+        self.bus.write_byte_data(0x2c, 0x7C, 0x12)  #Assign 0x20 TMP sensor to Fan1, 0x21 TMP to Fan2
+        self.bus.write_byte_data(0x2c, 0x7D, 0x34)  #Assign 0x22 TMP sensor to Fan3, 0x23 TMP to Fan4
+        logging.info('Hard-set assigned TMP01, 02, 03, 04 to Fan01, 02, 03, 04, respectively')
+        #When temp exceeds Tmin, fan runs at PWMin. Increases to max speed PWMax at Tmin + 20C
+        self.bus.write_byte_data(0x2c, 0x6E, tmin1)  #Temp Tmin1 register
+        self.bus.write_byte_data(0x2c, 0x6F, tmin2)  #Temp Tmin2 register
+        self.bus.write_byte_data(0x2c, 0x70, tmin3)  #Temp Tmin3 register
+        self.bus.write_byte_data(0x2c, 0x71, tmin4)  #Temp Tmin4 register
+        logging.info('Setting min. temp to %sC, %sC, %sC, & %sC' %(tmin1, tmin2, tmin3, tmin4))
+        #Sets PWM min duty cycle - will start running @ this duty cycle when Tmin exceeded
+        self.bus.write_byte_data(0x2c, 0x6A, pmin1)  #PWM1 min speed register
+        self.bus.write_byte_data(0x2c, 0x6B, pmin2)  #PWM2 min speed register
+        self.bus.write_byte_data(0x2c, 0x6C, pmin3)  #PWM3 min speed register
+        self.bus.write_byte_data(0x2c, 0x6D, pmin4)  #PWM4 min speed register
+        logging.info('Setting min pwm to %s%%, %s%%, %s%%, & %s%%' 
+            %(int(pmin1*.39), int(pmin2*.39), int(pmin3*.39), int(pmin4*.39)))
+        #Sets PWM max duty cycle - will start running @ this duty cycle when Tmin exceeded
+        self.bus.write_byte_data(0x2c, 0x38, pmax1)  #PWM1 max speed register
+        self.bus.write_byte_data(0x2c, 0x39, pmax2)  #PWM2 max speed register
+        self.bus.write_byte_data(0x2c, 0x3A, pmax3)  #PWM3 max speed register
+        self.bus.write_byte_data(0x2c, 0x3B, pmax4)  #PWM4 max speed register
+        logging.info('Setting max pwm to %s%%, %s%%, %s%%, & %s%%' 
+            %(int(pmax1*.39), int(pmax2*.39), int(pmax3*.39), int(pmax4*.39)))
+        self.bus.write_byte_data(0x2c, 0x40, self.insertBits(0x40, 0, 0, 0b1))  #configure to STRT monitoring & auto fan control based on limits
+        self.bus.write_byte_data(0x2c, 0x40, self.insertBits(0x40, 7, 7, 0b1))  #configure to initiate TMP pulse
+        logging.info('Configured to start monitoring & TMP pulse')
 
     def configReg1_defaults(self, STRT=0, HF_LF=1, T05_STB=1):
         '''!-INCOMPLETE-! - change to dynamically take in values instead of hard-set values'''
