@@ -183,36 +183,44 @@ class i2cPi:
         self.validateRegister(0x43, newRegVal)
         print("Configured Fan %s for %s pulses per revolution" %(fan, pulseRev))        
 
-    def setManualMode(self, fan ='all'):
+    def setModePWM(self, fan ='all', mode='auto'):
         '''Change to manual SW fan control mode, use method setPWM to adjust PWM duty cycle.'''
+        if mode == 'auto':
+            payload = 1 #value 1 sets to auto
+        elif mode == 'manual':
+            payload = 0 #value 0 sets to manual
         if fan == 'all':
-            self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 7, 6, 0b00))  #set man fan control mode for PWM 1 & 2
+            self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 7, 6, payload))  #set man fan control mode for PWM 1 & 2
             self.validateRegister(0x68, 0x00)
-            self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 7, 6, 0b00))  #set man fan control mode for PWM 3 & 4
+            self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 7, 6, payload))  #set man fan control mode for PWM 3 & 4
             self.validateRegister(0x69, 0x00)
         elif fan == 1:
-            self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 7, 7, 0))  #set man fan control mode PWM 1
+            self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 7, 7, payload))  #set man fan control mode PWM 1
+            self.validateRegister(0x68, 0x00)
         elif fan == 2:
-            self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 6, 6, 0))  #set man fan control mode PWM 2
+            self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 6, 6, payload))  #set man fan control mode PWM 2
+            self.validateRegister(0x68, 0x00)
         elif fan == 3:
-            self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 7, 7, 0))  #set man fan control mode PWM 3
+            self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 7, 7, payload))  #set man fan control mode PWM 3
+            self.validateRegister(0x69, 0x00)
         elif fan == 4:
-            self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 6, 6, 0))  #set man fan control mode PWM 4
+            self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 6, 6, payload))  #set man fan control mode PWM 4
+            self.validateRegister(0x69, 0x00)
         else:
             logging.info('Invalid entry, no changes applied. Enter "all", 1, 2, 3, or 4.')
             return None
         logging.info('Configured to manual fan control behavior for PWM %s. Method setPWM can now be used to manually control fan speeds.' %fan)
 
 
-    def setAutoMonitor(self, 
+    def setAutoMonitorGlobal(self, 
         tmin1=25, tmin2=25, tmin3=25, tmin4=25,
         pmin1=0x40, pmin2=0x40, pmin3=0x40, pmin4=0x40,
-        pmax1=0xFF, pmax2=0xFF, pmax3=0xFF, pmax4=0xFF):
+        pmax1=0xFF, pmax2=0xFF, pmax3=0xFF, pmax4=0xFF,
+        ):
         '''tmin value range: 0-255 degrees, pmin & pmax: 0-255 for 0-100% - reference pg.26 of ADT740 for instructions'''
-        '''!--ALERT--! Probably want to eventually separate min / max registers into their own configurable methods''' 
+        '''!--TBD--! Probably want to eventually separate min / max registers into their own configurable methods''' 
         #Configure to automatic fan control in PWM1/2 & PWM3/4 registers
-        self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 7, 6, 0b11))  #set auto fan control mode PWM 1 & 2
-        self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 7, 6, 0b11))  #set auto fan control mode PWM 3 & 4
+        self.setModePWM('all', mode='auto')
         logging.info('Configured register 0x68 & 0x69 to automatic fan control mode for Fan 1-4')
         #Assign tmp sensors to each fan  
         self.bus.write_byte_data(0x2c, 0x7C, 0x12)  #Assign 0x20 TMP sensor to Fan1, 0x21 TMP to Fan2
