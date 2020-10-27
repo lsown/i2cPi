@@ -185,12 +185,13 @@ class i2cPi:
 
     def setModePWM(self, fan ='all', mode='auto'):
         '''Change to manual SW fan control mode, use method setPWM to adjust PWM duty cycle.'''
+        pwmDict = {1:{'register':0x68, 'bitPos':7}, 2:{'register':0x68,'bitPos':6}, 3:{'register':0x69, 'bitPos':7}, 4:{'register':0x69,'bitPos':6}}
         if mode == 'auto':
             payload = 1 #value 1 sets to auto
         elif mode == 'manual':
             payload = 0 #value 0 sets to manual
         if fan == 'all':
-            self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 7, 7, payload))  #set man fan control mode for PWM 1 & 2.
+            self.bus.write_byte_data(0x2c, pwmDict[1]['register'], self.insertBits(pwmDict[1]['register'], pwmDict[1]['bitPos'], pwmDict[1]['bitPos'], payload))  #set man fan control mode for PWM 1 & 2.
             self.validateRegister(0x68, self.insertBits(0x68, 7, 7, payload))
             self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 6, 6, payload))  #set man fan control mode PWM 2
             self.validateRegister(0x68, self.insertBits(0x68, 6, 6, payload))
@@ -198,8 +199,10 @@ class i2cPi:
             self.validateRegister(0x69, self.insertBits(0x69, 7, 7, payload))
             self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 6, 6, payload))  #set man fan control mode for PWM 3 & 4
             self.validateRegister(0x69, self.insertBits(0x69, 6, 6, payload))
-            self.validateRegister(0x69, 0x00)
-        elif fan == 1:
+        elif (fan == 1) or (fan == 2) or (fan == 3) or (fan == 4):
+            writeVal = self.insertBits(pwmDict[fan]['register'], pwmDict[fan]['bitPos'], pwmDict[fan]['bitPos'], payload)
+            self.bus.write_byte_data(0x2c, pwmDict[fan]['register'], writeVal)  #set man fan control mode for PWM 1 & 2.
+        '''elif fan == 1:
             self.bus.write_byte_data(0x2c, 0x68, self.insertBits(0x68, 7, 7, payload))  #set man fan control mode PWM 1
             self.validateRegister(0x68, self.insertBits(0x68, 7, 7, payload))
         elif fan == 2:
@@ -210,11 +213,11 @@ class i2cPi:
             self.validateRegister(0x69, self.insertBits(0x69, 7, 7, payload))
         elif fan == 4:
             self.bus.write_byte_data(0x2c, 0x69, self.insertBits(0x69, 6, 6, payload))  #set man fan control mode PWM 4
-            self.validateRegister(0x69, self.insertBits(0x69, 6, 6, payload))
+            self.validateRegister(0x69, self.insertBits(0x69, 6, 6, payload))'''
         else:
             logging.info('Invalid entry, no changes applied. Enter "all", 1, 2, 3, or 4.')
             return None
-        logging.info('Configured to manual fan control behavior for PWM %s. Method setPWM can now be used to manually control fan speeds.' %fan)
+        logging.info('Configured to %s fan control behavior for PWM %s. Method setPWM can now be used to manually control fan speeds.' %(mode,fan))
 
 
     def setAutoMonitorGlobal(self, 
