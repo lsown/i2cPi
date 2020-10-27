@@ -349,28 +349,28 @@ class i2cPi:
         self.configReg1_defaults()   #reapply default config
 
     def rbINT(self):
-        print('!-------------------REPORT-------------------!')
+        print('!-------------------REPORT rbINT-------------------!')
         print('Interrupt Status Register 1 0x41: %s' %bin(self.writeRead(0x41)))
         print('Interrupt Status Register 2 0x42: %s' %bin(self.writeRead(0x42)))
 
     def rbAutoMonitor(self):
-        print('!-------------------REPORT-------------------!')
-        print('rbAutoMonitor: PWM Config 1/2 0x68 & 3/4 0x69. Expected: 0xc0 vs. Read: %s & %s.' %(hex(self.writeRead(0x68)), hex(self.writeRead(0x69))))
-        print('rbAutoMonitor: Therm Zone - Fan Assignment Zone 1/2 0x7c. Expected: 0x12 vs. Read: %s.' %(hex(self.writeRead(0x7c))))
-        print('rbAutoMonitor: Therm Zone - Fan Assignment Zone 3/4. 0x7d. Expected: 0x34 vs. Read: %s.' %(hex(self.writeRead(0x7d))))
         tminList = []
-        for i in [0x6E, 0x6F, 0x70, 0x71]:  #tminRegList
-            tminList.append(self.writeRead(i))
-        print('rbAutoMonitor: Tmin1: %s || Tmin2: %s || Tmin3: %s || Tmin4: %s' %(tminList[0], tminList[1], tminList[2], tminList[3]))
         pminList = []
-        for i in [0x6A, 0x6B, 0x6C, 0x6D]:
-            pminList.append(int(self.writeRead(i)*.39))
-        print('rbAutoMonitor: PMin Registers. Pmin1: %s%% || Pmin2: %s%% || Pmin3: %s%% || Pmin4: %s%%' %(pminList[0], pminList[1], pminList[2], pminList[3]))
         pmaxList = []
-        for i in [0x38, 0x39, 0x3A, 0x3B]:
+        print('!-------------------REPORT: rbAutoMonitor-------------------!')
+        print('PWM Config 1/2 0x68 & 3/4 0x69. Expected: 0xc0 vs. Read: %s & %s.' %(hex(self.writeRead(0x68)), hex(self.writeRead(0x69))))
+        print('Therm Zone - Fan Assignment Zone 1/2 0x7c. Expected: 0x12 vs. Read: %s.' %(hex(self.writeRead(0x7c))))
+        print('Therm Zone - Fan Assignment Zone 3/4. 0x7d. Expected: 0x34 vs. Read: %s.' %(hex(self.writeRead(0x7d))))
+        for i in [0x6E, 0x6F, 0x70, 0x71]:  #Tmin Registers
+            tminList.append(self.writeRead(i))
+        print('Tmin1: %s || Tmin2: %s || Tmin3: %s || Tmin4: %s' %(tminList[0], tminList[1], tminList[2], tminList[3]))
+        for i in [0x6A, 0x6B, 0x6C, 0x6D]:  #PWM min Registers
+            pminList.append(int(self.writeRead(i)*.39))
+        print('PMin Registers. Pmin1: %s%% || Pmin2: %s%% || Pmin3: %s%% || Pmin4: %s%%' %(pminList[0], pminList[1], pminList[2], pminList[3]))
+        for i in [0x38, 0x39, 0x3A, 0x3B]:  #PWM max Registers
             pmaxList.append(int(self.writeRead(i)*.39))
-        print('rbAutoMonitor: PMax Registers. Pmax1: %s%% || Pmax2: %s%% || Pmax3: %s%% || Pmax4: %s%%' %(pmaxList[0], pmaxList[1], pmaxList[2], pmaxList[3]))
-        print('rbAutoMonitor: Config Register 1. Expected: 0b1x000001 vs. Read: %s' %(bin(self.writeRead(0x40))))
+        print('PMax Registers. Pmax1: %s%% || Pmax2: %s%% || Pmax3: %s%% || Pmax4: %s%%' %(pmaxList[0], pmaxList[1], pmaxList[2], pmaxList[3]))
+        print('Config Register 1. Expected: 0b1x000001 vs. Read: %s' %(bin(self.writeRead(0x40))))
 
     def configReg1_defaults(self, STRT=0, HF_LF=1, T05_STB=1):
         '''!-INCOMPLETE-! - change to dynamically take in values instead of hard-set values'''
