@@ -5,7 +5,7 @@ from smbus2 import SMBus
 import logging
 import time
 
-class i2cPi:
+class mcuPiFanCon:
     def __init__(self):
 
         logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.DEBUG, datefmt="%H:%M:%S")
@@ -98,27 +98,28 @@ class i2cPi:
             logging.info('Error 121 - Remote I/O Error on address 77 - TCA9548')
 
     def adtEN(self, wantedState = 'on'):
-        '''Arguments: 'on' | 'off' - Register 0x74'''
+        '''Enables / disables IC. Register 0x74 bit[7]. Arguments: 'on' | 'off'.'''
         if wantedState == 'on':
-            payLoad = 0b0   #value 0 = ON
+            payload = 0b0   #value 0 = ON
         elif wantedState == 'off':
-            payLoad = 0b1   #value 1 = OFF
+            payload = 0b1   #value 1 = OFF
         else:
             print('Bad argument... only "on" or "off" accepted.')
             return None
-        self.bus.write_byte_data(0x2c, 0x74, self.insertBits(0x74, 7, 7, payLoad))
-        print('ADT7470 configured to %s , %s set on bit 7 of register 0x74.' %(wantedState, bin(payLoad)))
+        self.bus.write_byte_data(0x2c, 0x74, self.insertBits(0x74, 7, 7, payload))
+        print('ADT7470 configured to %s , %s set on bit 7 of register 0x74.' %(wantedState, bin(payload)))
 
     def configFansGlobal(self, 
-    freqRange = "low", freqBits = 0b111, fanType='3-wire', fan_PPRev='all', pulseRev = 2,
-    tempLow = 0x4, tempHigh = 0x50, sensors = 4,
-    minRPM = 1000, maxRPM = 'max'
-    ):    
+        freqRange = "low", freqBits = 0b111, fanType='3-wire', 
+        fan_PPRev='all', pulseRev = 2,
+        tempLow = 0x4, tempHigh = 0x50, sensors = 4,
+        minRPM = 500, maxRPM = 'max'
+        ):
+        '''Helper global config, setting values to what is probably reasonable as a starting point'''
         self.setFreq(freqRange, freqBits, fanType)  #configure low frequency mode, monitoring, & 88.2 Hz
         self.setPPRev(fan_PPRev, pulseRev) #configures pulses per RPM
         self.setTempLimitsGlobal(tempLow, tempHigh, sensors)    #configures all 4 temp limits
         self.setTachLimitsGlobal(minRPM, maxRPM)    #Calls .setTachLimits for each fan
-
 
     def setFreq(self, freqRange='low', freqBits=0b111, fanType = '3-wire'): 
         """Sets global frequency range for fans. Configures 2 registers, specifying low or hi frequency (0x40), and speed (0x74) in low frequency mode. Configures speed for lowest common denominator fan."""
@@ -150,7 +151,7 @@ class i2cPi:
             print('Configured %s kHz for %s frequency PWM' %(hiFreqDict[freqBits], freqRange))
 
     def setPWM(self, fan=1, dutyCycle=100): 
-        """Sets duty cycle from 0-100% for fan specified"""
+        """Sets duty cycle from 0-100% for fan specified in manual mode"""
         try:
             fanRegister = 0x32+fan-1 #selector for fan register 0x32-0x35
             duty8bit = int(dutyCycle/0.39)  #0.39 is the conversion factor from % to bits.
@@ -213,8 +214,10 @@ class i2cPi:
         pmin1=0x40, pmin2=0x40, pmin3=0x40, pmin4=0x40,
         pmax1=0xFF, pmax2=0xFF, pmax3=0xFF, pmax4=0xFF,
         ):
-        
-        '''tmin value range: 0-255 degrees, pmin & pmax: 0-255 for 0-100% - reference pg.26 of ADT740 for instructions'''
+        '''Function (1) configures PWM1-4 for automated control; (2) sets Tmin, Pmin, Pmax; & (3) initiates monitoring mode & temp sensing.
+        Range tmin: 0-255 bit[7] represents negative value, -127 to 127C. 
+        Range pmin & pmax: 0-255 for 0-100%. 
+        Tmin is minimum temp at which fans turn on. Pmin is minimum duty cycle at which fan starts running. Pmax is max duty cycle when temp hits tmin + 20C.'''
         '''!--TBD--! Probably want to eventually separate min / max registers into their own configurable methods''' 
         #Configure to automatic fan control in PWM1/2 & PWM3/4 registers
         self.setModePWM('all', mode='auto')
@@ -223,21 +226,18 @@ class i2cPi:
         self.bus.write_byte_data(0x2c, 0x7C, 0x12)  #Assign 0x20 TMP sensor to Fan1, 0x21 TMP to Fan2
         self.bus.write_byte_data(0x2c, 0x7D, 0x34)  #Assign 0x22 TMP sensor to Fan3, 0x23 TMP to Fan4
         logging.info('Hard-set assigned TMP01, 02, 03, 04 to Fan01, 02, 03, 04, respectively')
-        #When temp exceeds Tmin, fan runs at PWMin. Increases to max speed PWMax at Tmin + 20C
         '''!---ALERT--! When writing here, note -127 to 127 range with bit[7] representing negative value.'''
         self.bus.write_byte_data(0x2c, 0x6E, tmin1)  #Temp Tmin1 register
         self.bus.write_byte_data(0x2c, 0x6F, tmin2)  #Temp Tmin2 register
         self.bus.write_byte_data(0x2c, 0x70, tmin3)  #Temp Tmin3 register
         self.bus.write_byte_data(0x2c, 0x71, tmin4)  #Temp Tmin4 register
         logging.info('Setting min. temp to %sC, %sC, %sC, & %sC' %(tmin1, tmin2, tmin3, tmin4))
-        #Sets PWM min duty cycle - will start running @ this duty cycle when Tmin exceeded
         self.bus.write_byte_data(0x2c, 0x6A, pmin1)  #PWM1 min speed register
         self.bus.write_byte_data(0x2c, 0x6B, pmin2)  #PWM2 min speed register
         self.bus.write_byte_data(0x2c, 0x6C, pmin3)  #PWM3 min speed register
         self.bus.write_byte_data(0x2c, 0x6D, pmin4)  #PWM4 min speed register
         logging.info('Setting min pwm to %s%%, %s%%, %s%%, & %s%%' 
             %(int(pmin1*.39), int(pmin2*.39), int(pmin3*.39), int(pmin4*.39)))
-        #Sets PWM max duty cycle - will start running @ this duty cycle when Tmin exceeded
         self.bus.write_byte_data(0x2c, 0x38, pmax1)  #PWM1 max speed register
         self.bus.write_byte_data(0x2c, 0x39, pmax2)  #PWM2 max speed register
         self.bus.write_byte_data(0x2c, 0x3A, pmax3)  #PWM3 max speed register
@@ -246,7 +246,7 @@ class i2cPi:
             %(int(pmax1*.39), int(pmax2*.39), int(pmax3*.39), int(pmax4*.39)))
         self.bus.write_byte_data(0x2c, 0x40, self.insertBits(0x40, 0, 0, 0b1))  #configure to STRT monitoring & auto fan control based on limits
         self.bus.write_byte_data(0x2c, 0x40, self.insertBits(0x40, 7, 7, 0b1))  #configure to initiate TMP pulse
-        logging.info('Configured to start monitoring & TMP pulse')
+        logging.info('Configured 0x40: Enabled limit-based monitoring & TMP measurements')
 
     def setAutoFanTempZone(self, fan=1, sensor=1):
         '''!---PLACEHOLDER---! For individually assigning each fan to a temperature zone'''
@@ -294,16 +294,10 @@ class i2cPi:
         except:
             logging.info('Failed to set temp limits')
 
-    def setTachLimitsGlobal(self, minRPM ='min', maxRPM='max'):
-        for fan in range(1, 5):
-            self.setTachLimits(fan, minRPM, maxRPM)
-
     def setTachLimits(self, fan = 1, minRPM = 'min', maxRPM = 'max'):
         #Default register sets min and max at furthest range, so does not trigger SMBALERT
-        '''!ALERT! 
-        We need to update this register as the fan controller monitor adjusts PWM up and down in response to temperature, otherwise... these registers may flag.
-        We'll need to map normal PWM duty cycle, frequency, and tachometer readback in a real use case
-        to determine fan behavior @ various PWM cycles to control for when alert flags occur.
+        '''!ALERT! We need to update this register as the fan controller monitor adjusts PWM up and down in response to temperature, otherwise there may be an ALERT flag.
+        We'll need to map normal PWM duty cycle, frequency, and tachometer readback in a real use case to determine fan behavior @ various PWM cycles to control for when alert flags occur.
         Register for fan tachs: 0x58 - 0x67.'''
 
         hexMinAddLow = 0x58+(2*(fan-1))
@@ -324,7 +318,7 @@ class i2cPi:
             maxClock = int(5400000 / maxRPM)    #5.4e6 derives from 90kHz clock * 60 sec/min
             tachMaxLowB = maxClock & 0xff    #mask off high byte register
             tachMaxHighB = (maxClock >> 8) & 0xff   #shift off low byte register & shift
-        '''Read order is low byte, then high byte. A low byte read will FREEZE the high byte register value until both low and high byte are read'''
+        '''Read order is low byte, then high byte. A low byte read FREEZES  high byte register until both low and high byte are read.'''
         self.bus.write_byte_data(0x2c, hexMinAddLow, tachMinLowB)
         self.bus.write_byte_data(0x2c, hexMinAddHigh, tachMinHighB)  
         self.bus.write_byte_data(0x2c, hexMaxAddLow, tachMaxLowB)  
@@ -339,9 +333,15 @@ class i2cPi:
             %(fan, hex(hexMaxAddHigh), hex(tachMaxHighB), hex(self.writeRead(hexMaxAddHigh))))
         logging.info('Configured tach range to %s - %s' %(minRPM, maxRPM))
 
+    def setTachLimitsGlobal(self, minRPM ='min', maxRPM='max'):
+        for fan in range(1, 5):
+            self.setTachLimits(fan, minRPM, maxRPM)
+
     def setINTmask(self, bitName, maskEN = 1):
-        '''Reference dictionary below for ALERT to mask based on bitname. Setting maskEN 1 masks the alert, 0 removes the mask. Use this to quiet the alert until it is resolved and to allow other error states to signal the alert'''
+        '''Reference dictionary below for ALERT to mask based on bitname. A value of maskEN 1 adds mask, 0 removes the mask. Standard use case is to mask a known alert until resolved... to allow other error states to signal the alert'''
+
         masks = {'temp7': {'register':0x72, 'bitPos': 6}, 'temp6': {'register':0x72, 'bitPos': 5}, 'temp5': {'register':0x72, 'bitPos': 4}, 'temp4': {'register':0x72, 'bitPos': 3}, 'temp3': {'register':0x72, 'bitPos': 2}, 'temp2': {'register':0x72, 'bitPos': 1}, 'temp1': {'register':0x72, 'bitPos': 0}, 'fan4': {'register':0x73, 'bitPos': 7}, 'fan3': {'register':0x73, 'bitPos': 6}, 'fan2': {'register':0x73, 'bitPos': 5}, 'fan1': {'register':0x73, 'bitPos': 4}, 'daisy': {'register':0x73, 'bitPos': 3}, 'temp10': {'register':0x73, 'bitPos': 2}, 'temp9': {'register':0x73, 'bitPos': 1}, 'temp8': {'register':0x73, 'bitPos': 0}}
+        
         newRegVal = self.insertBits(masks[bitName]['register'], masks[bitName]['bitPos'], masks[bitName]['bitPos'], maskEN)  #insert maskEN value into its position within the registry.
         self.bus.write_byte_data(0x2c, masks[bitName]['register'], newRegVal)
         self.validateRegister(masks[bitName]['register'], newRegVal)
@@ -385,6 +385,7 @@ class i2cPi:
         logging.info('Restarted TMP daisy chain.')
 
     def rbINT(self):
+        '''Prints out interrupt & mask registers. Also prints out state of ALERT pin'''
         print('!-------------------REPORT rbINT-------------------!')
         print('Interrupt Status Register 1 0x41: %s' %bin(self.writeRead(0x41)))
         print('Interrupt Mask   Register 1 0x72: %s' %bin(self.writeRead(0x72)))
@@ -417,29 +418,20 @@ class i2cPi:
         #logging.info('rbTempLimits: AddLow: %s AddHi: %s' %(hex(hexAddLow), hex(hexAddHi)))    #self-check on address
         tempLow = self.writeRead(hexAddLow)
         tempHi = self.writeRead(hexAddHi)
-        '''if (tempLow >> 7) == 1: #shift to bit[7], if value = 1, apply negative equation
-            tempLow = tempLow - 256
-        if (tempHi >> 7) == 1:  #shift to bit[7], if value = 1, apply negative equation
-            tempHi = tempHi - 256'''
         print('Sensor %s temp limit low: %s & high: %s' %(sensor, self.tempHexToDec(tempLow), self.tempHexToDec(tempHi)))
 
     def rbTempLimitsGlobal(self):
-        '''Helper to query all 10 at once'''
+        '''Calls rbTempLimits to query all 10 temp limits at once'''
         for x in range(1, 11):
             self.rbTempLimits(x)
 
-    def configReg1_defaults(self, STRT=0, HF_LF=1, T05_STB=1):
-        '''!-INCOMPLETE-! - change to dynamically take in values instead of hard-set values'''
-        self.bus.write_byte_data(0x2c, 0x40, 0xc1)  #config to run monitoring (0), low freq (1), & TMPstartpulse (1)
-        self.validateRegister(0x40, 0xc1)
-        print('Config Register 1 bits set - STRT: %s HF_LF: %s T05_STB: %s' %(STRT, HF_LF, T05_STB))
-
     def validateRegister(self, wantedReg, wantedVal):  #assumes a prior write has been performed so pointer address previously set
+        '''Helper i2c function to check write to register successful.'''
         readback = self.bus.read_byte(0x2c, 0x00)
         if wantedVal == readback:
-            print('Validated W/R - Register %s value: (%s, %s, %s)' %(hex(wantedReg), hex(wantedVal), bin(wantedVal), wantedVal))
+            logging.info('Validated W/R - Register %s value: (%s, %s, %s)' %(hex(wantedReg), hex(wantedVal), bin(wantedVal), wantedVal))
         else:
-            print('!--ERROR--! Register %s value is %s, not %s wanted' %(hex(wantedReg),readback, wantedVal))
+            logging.info('!--ERROR--! Register %s value is %s, not %s wanted' %(hex(wantedReg),readback, wantedVal))
 
     def insertBits(self, regAddress, posHi, posLow, payLoad):
         '''Helper function to insert in a bit payload without impacting surrounding bits in the byte. The regAddress is pointer address, posHi & posLow are bit position to be inserted, payload is wanted binary, ex. 0b11. Example: self.insertBits(0x43, 7, 6, 0b11) will insert in 0b11 into positions 7 & 6 of the byte at address 0x43.'''
