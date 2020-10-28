@@ -56,18 +56,6 @@ class mcuPiFanCon:
     def getPinState(self, pin):
         return GPIO.input(pin)
 
-    def updateState(self, channel, value):
-        for i in self.pinsIn:
-            if channel == self.pinsIn[i]['pin']:
-                self.pinsIn[i]['state'] = value
-                print('%s pin triggered, %s configured state to %s' %(str(channel), self.pinsIn[i]['name'], self.pinsIn[i]['state'])) # debug
-
-    def displayFlag(self, channel):
-        if GPIO.input(channel) == 1:
-            self.updateState(channel, 1)
-        if GPIO.input(channel) == 0:
-            self.updateState(channel, 0)
-
     def tunnel(self):
         try:
             self.bus.read_byte_data(0x77, 0x00) #check config register of mux layer-0 
