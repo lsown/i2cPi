@@ -58,7 +58,7 @@ class oledDisplay:
 
 class voxaDisplay:
     def __init__(self):
-        logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.DEBUG, datefmt="%H:%M:%S")
+        logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.DEBUG)
 
         '''PCA9537 Registers: 1:Input Port Register | 2: Output Port Register | 3: Polarity Inversion Register | 4: Configuration Register'''
 
@@ -112,7 +112,6 @@ class voxaDisplay:
             #configure event detections for pinType buttonInterface. INT LOW signals input change detected.
             if self.pinsIn[i]['pinType'] == 'buttonInterface':
                 GPIO.add_event_detect(self.pinsIn[i]['pin'], GPIO.FALLING, callback=self.buttonPress, bouncetime=400) 
-                logging.info('%s Logged button callback' %(str(self.pinsIn[i]['name'])))
 
     def updateState(self, channel, value):
         for i in self.pinsIn:
@@ -121,8 +120,9 @@ class voxaDisplay:
                 print('%s pin triggered, %s configured state to %s' %(str(channel), self.pinsIn[i]['name'], self.pinsIn[i]['state'])) # debug
 
     def buttonPress(self, channel):
-        logging.info('Button press function call')
+        logging.info('%s Logged button callback' %(str(self.pinsIn[i]['name'])))
         self.queryButtonReg()
+
 
     def getPinState(self, pin):
         return GPIO.input(pin)
@@ -183,7 +183,6 @@ class voxaDisplay:
 
     def queryButtonReg(self):
         buttonState = self.bus.read_byte(0x49, 0x00)
-        time.sleep(0.1)
         #buttonState2 == buttonState
         if buttonState == 0b11110010:
             logging.info('Going left - register read s0, i.e. 0b11110010')
@@ -194,8 +193,11 @@ class voxaDisplay:
         elif buttonState == 0b11110000:
             logging.info('Both pressed - register read s0&1, i.e. 0b11110000.')
             self.display.drawStatus(text1='Double-press', text2=('0b11110000'))
+        elif buttonState == 0b11110011:
+            logging.info('No change reported')
+            self.display.drawStatus(text1='Double-press', text2=('0b11110000'))
         else:
-            logging.info('Spurious read %s read.' %buttonState)
+            logging.info('Spurious read %s read.' %bin(buttonState))
             self.display.drawStatus(text1='Spurious Read', text2=('?'))
         global exit_loop
         exit_loop = True
