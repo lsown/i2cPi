@@ -120,8 +120,10 @@ class voxaDisplay:
                 print('%s pin triggered, %s configured state to %s' %(str(channel), self.pinsIn[i]['name'], self.pinsIn[i]['state'])) # debug
 
     def buttonPress(self, channel):
-        logging.info('Display Flag Logged button callback' )
+        logging.info('Display Flag Logged button callback - ALERT pin state is %s' %GPIO.input(22))
         self.queryButtonReg()
+        logging.info('Finished queryButtonReg - ALERT pin state is %s' %GPIO.input(22))
+
 
 
     def getPinState(self, pin):
