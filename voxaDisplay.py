@@ -197,11 +197,11 @@ class voxaDisplay:
             self.display.drawStatus(text1='Double-press', text2=('0b11110000'))
         elif buttonState == 0b11110011:
             logging.info('No change reported')
-            self.display.drawStatus(text1='Double-press', text2=('0b11110000'))
+            self.display.drawStatus(text1='Double-press', text2=('0b11110011'))
         else:
             logging.info('Spurious read %s read.' %bin(buttonState))
             self.display.drawStatus(text1='Spurious Read', text2=('?'))
-        logging.info('Re-reading to clear register on button release' %self.bus.read_byte(0x49, 0x00))
+        logging.info('Re-reading to clear register on button release - %s' %bin(self.bus.read_byte(0x49, 0x00)))
         #global exit_loop
         #exit_loop = True
 
