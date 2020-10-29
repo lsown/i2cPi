@@ -18,7 +18,7 @@ class oledDisplay:
 		self.oled_reset = 24
 		self.WIDTH = 128
 		self.HEIGHT = 32
-		self.BORDER = 5
+		self.BORDER = 2
 		self.i2c = board.I2C()
 		self.oled = adafruit_ssd1306.SSD1306_I2C(self.WIDTH, self.HEIGHT, self.i2c, addr=0x3c) #reset taken out
 
@@ -109,9 +109,9 @@ class voxaDisplay:
             self.pinsIn[i]['state'] = GPIO.input(self.pinsIn[i]['pin'])
             logging.info('%s initial state is %s' %(self.pinsIn[i]['name'], str(self.pinsIn[i]['state'])))
 
-            #configure event detections for pinType levelSensor & interface
+            #configure event detections for pinType buttonInterface. INT LOW signals input change detected.
             if self.pinsIn[i]['pinType'] == 'buttonInterface':
-                GPIO.add_event_detect(self.pinsIn[i]['pin'], GPIO.FALLING, callback=self.buttonPress, bouncetime=400) 
+                GPIO.add_event_detect(self.pinsIn[i]['pin'], GPIO.RISING, callback=self.buttonPress, bouncetime=400) 
                 logging.info('%s Logged button callback' %(str(self.pinsIn[i]['name'])))
 
     def updateState(self, channel, value):
