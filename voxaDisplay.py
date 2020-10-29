@@ -111,7 +111,7 @@ class voxaDisplay:
 
             #configure event detections for pinType buttonInterface. INT LOW signals input change detected.
             if self.pinsIn[i]['pinType'] == 'buttonInterface':
-                GPIO.add_event_detect(self.pinsIn[i]['pin'], GPIO.RISING, callback=self.buttonPress, bouncetime=400) 
+                GPIO.add_event_detect(self.pinsIn[i]['pin'], GPIO.FALLING, callback=self.buttonPress, bouncetime=400) 
                 logging.info('%s Logged button callback' %(str(self.pinsIn[i]['name'])))
 
     def updateState(self, channel, value):
@@ -185,15 +185,15 @@ class voxaDisplay:
         buttonState = self.bus.read_byte(0x49, 0x00)
         time.sleep(0.1)
         #buttonState2 == buttonState
-        if buttonState == 0b1110:
-            logging.info('Going left - register read s0, i.e. 0b1110')
-            self.display.drawStatus(text1='Click Left', text2=('0b1110'))
-        elif buttonState == 0b1101:
-            logging.info('Going right - register read s1, i.e. 0b1101')
-            self.display.drawStatus(text1='Click Right', text2=('0b1110'))
-        elif buttonState == 0b1100:
-            logging.info('Both pressed - register read s0&1, i.e. 0b1100.')
-            self.display.drawStatus(text1='Double-press', text2=('0b1110'))
+        if buttonState == 0b11110010:
+            logging.info('Going left - register read s0, i.e. 0b11110010')
+            self.display.drawStatus(text1='Click Left', text2=('0b11110010'))
+        elif buttonState == 0b11110001:
+            logging.info('Going right - register read s1, i.e. 0b11110001')
+            self.display.drawStatus(text1='Click Right', text2=('0b11110001'))
+        elif buttonState == 0b11110000:
+            logging.info('Both pressed - register read s0&1, i.e. 0b11110000.')
+            self.display.drawStatus(text1='Double-press', text2=('0b11110000'))
         else:
             logging.info('Spurious read %s read.' %buttonState)
             self.display.drawStatus(text1='Spurious Read', text2=('?'))
