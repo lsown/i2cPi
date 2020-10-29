@@ -111,7 +111,7 @@ class voxaDisplay:
 
             #configure event detections for pinType buttonInterface. INT LOW signals input change detected.
             if self.pinsIn[i]['pinType'] == 'buttonInterface':
-                GPIO.add_event_detect(self.pinsIn[i]['pin'], GPIO.FALLING, callback=self.buttonPress, bouncetime=400) 
+                GPIO.add_event_detect(self.pinsIn[i]['pin'], GPIO.BOTH, callback=self.buttonPress, bouncetime=0) 
 
     def updateState(self, channel, value):
         for i in self.pinsIn:
@@ -196,8 +196,8 @@ class voxaDisplay:
             logging.info('Both pressed - register read s0&1, i.e. 0b11110000.')
             self.display.drawStatus(text1='Double-press', text2=('0b11110000'))
         elif buttonState == 0b11110011:
-            logging.info('No change reported')
-            self.display.drawStatus(text1='Double-press', text2=('0b11110011'))
+            logging.info('Neither button pushed state')
+            self.display.drawStatus(text1='Neither button pushed state', text2=('0b11110011'))
         else:
             logging.info('Spurious read %s read.' %bin(buttonState))
             self.display.drawStatus(text1='Spurious Read', text2=('?'))
