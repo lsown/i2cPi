@@ -111,7 +111,7 @@ class voxaDisplay:
 
             #configure event detections for pinType buttonInterface. INT LOW signals input change detected.
             if self.pinsIn[i]['pinType'] == 'buttonInterface':
-                GPIO.add_event_detect(self.pinsIn[i]['pin'], GPIO.BOTH, callback=self.buttonPress, bouncetime=0) 
+                GPIO.add_event_detect(self.pinsIn[i]['pin'], GPIO.FALLING, callback=self.buttonPress, bouncetime=10) 
 
     def updateState(self, channel, value):
         for i in self.pinsIn:
