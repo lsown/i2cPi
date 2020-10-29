@@ -201,8 +201,9 @@ class voxaDisplay:
         else:
             logging.info('Spurious read %s read.' %bin(buttonState))
             self.display.drawStatus(text1='Spurious Read', text2=('?'))
-        global exit_loop
-        exit_loop = True
+        logging.info('Re-reading to clear register on button release' %self.bus.read_byte(0x49, 0x00))
+        #global exit_loop
+        #exit_loop = True
 
 
 
