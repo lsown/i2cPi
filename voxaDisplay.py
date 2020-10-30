@@ -185,14 +185,14 @@ class voxaDisplay:
 
     def queryButtonReg(self):
         buttonState = self.bus.read_byte(0x49, 0x00)
-        if buttonState == 0b11110010:
+        if buttonState == 0b11110000:
+            logging.info('Both pressed - register read s0&1, i.e. 0b11110000.')
+        elif buttonState == 0b11110010:
             logging.info('Going left - register read s0, i.e. 0b11110010')
             self.display.drawStatus(text1='Click Left', text2=('0b11110010'))
         elif buttonState == 0b11110001:
             logging.info('Going right - register read s1, i.e. 0b11110001')
             self.display.drawStatus(text1='Click Right', text2=('0b11110001'))
-        elif buttonState == 0b11110000:
-            logging.info('Both pressed - register read s0&1, i.e. 0b11110000.')
             self.display.drawStatus(text1='Double-press', text2=('0b11110000'))
         elif buttonState == 0b11110011:
             logging.info('Neither button pushed state')
