@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw, ImageFont
 import adafruit_ssd1306
 
 #threading
-import threading
+#import threading
 
 class oledDisplay:
 	def __init__(self):
