@@ -183,7 +183,6 @@ class voxaDisplay:
 
     def queryButtonReg(self):
         buttonState = self.bus.read_byte(0x49, 0x00)
-        #buttonState2 == buttonState
         if buttonState == 0b11110010:
             logging.info('Going left - register read s0, i.e. 0b11110010')
             self.display.drawStatus(text1='Click Left', text2=('0b11110010'))
@@ -196,8 +195,8 @@ class voxaDisplay:
         elif buttonState == 0b11110011:
             logging.info('Neither button pushed state')
             #self.display.drawStatus(text1='Neither button pushed state', text2=('0b11110011'))
-        else:
-            logging.info('Spurious read %s read.' %bin(buttonState))
+        #else:
+            #logging.info('Spurious read %s read.' %bin(buttonState))
             #self.display.drawStatus(text1='Spurious Read', text2=('?'))
         #logging.info('Re-reading to clear register on button release')
         #afterState = self.bus.read_byte(0x49, 0x00)
