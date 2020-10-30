@@ -184,28 +184,36 @@ class voxaDisplay:
         return byteLoad 
 
     def queryButtonReg(self):
-        buttonState = self.bus.read_byte(0x49, 0x00)
-        if buttonState == 0b11110000:
+        try:
+            buttonState = self.bus.read_byte(0x49, 0x00)
+            if buttonState == 0b11110000:
             logging.info('Both pressed - register read s0&1, i.e. 0b11110000.')
             self.display.drawStatus(text1='Double-press', text2=('0b11110000'))
-        elif buttonState == 0b11110010:
-            logging.info('Going left - register read s0, i.e. 0b11110010')
-            self.display.drawStatus(text1='Click Left', text2=('0b11110010'))
-        elif buttonState == 0b11110001:
-            logging.info('Going right - register read s1, i.e. 0b11110001')
-            self.display.drawStatus(text1='Click Right', text2=('0b11110001'))
-        elif buttonState == 0b11110011:
-            logging.info('Neither button pushed state')
-        time.sleep(0.1) #Lets give a small timeout and then re-read register to cleanup and pull ALERT back up in case it failed to go back up. 
-        logging.info('Clean-up register - just in case ALERT is pulled low. Value read is %s' %bin(self.bus.read_byte(0x49, 0x00)))
-            #self.display.drawStatus(text1='Neither button pushed state', text2=('0b11110011'))
-        #else:
-            #logging.info('Spurious read %s read.' %bin(buttonState))
-            #self.display.drawStatus(text1='Spurious Read', text2=('?'))
-        #logging.info('Re-reading to clear register on button release')
-        #afterState = self.bus.read_byte(0x49, 0x00)
-        global exit_loop
-        exit_loop = True
+            elif buttonState == 0b11110010:
+                logging.info('Going left - register read s0, i.e. 0b11110010')
+                self.display.drawStatus(text1='Click Left', text2=('0b11110010'))
+            elif buttonState == 0b11110001:
+                logging.info('Going right - register read s1, i.e. 0b11110001')
+                self.display.drawStatus(text1='Click Right', text2=('0b11110001'))
+            elif buttonState == 0b11110011:
+                logging.info('Neither button pushed state')
+            time.sleep(0.1) #Lets give a small timeout and then re-read register to cleanup and pull ALERT back up in case it failed to go back up. 
+            logging.info('Clean-up register - just in case ALERT is pulled low. Value read is %s' %bin(self.bus.read_byte(0x49, 0x00)))
+                #self.display.drawStatus(text1='Neither button pushed state', text2=('0b11110011'))
+            #else:
+                #logging.info('Spurious read %s read.' %bin(buttonState))
+                #self.display.drawStatus(text1='Spurious Read', text2=('?'))
+            #logging.info('Re-reading to clear register on button release')
+            #afterState = self.bus.read_byte(0x49, 0x00)
+            global exit_loop
+            exit_loop = True
+        except OSError:
+            logging.info('Remote - OSError... wait 200 mS and re-initialize OLED.')
+            time.sleep(0.2)
+            buttonState = self.bus.read_byte(0x49, 0x00)
+            self.display = oledDisplay() #creates a display object
+            self.display.drawStatus(text1='Restart!', text2=('Ready to Go!'))
+        
 
 
 
