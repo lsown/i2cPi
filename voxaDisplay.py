@@ -15,80 +15,80 @@ import adafruit_ssd1306
 import threading
 
 class oledDisplay:
-	def __init__(self):
-		self.textfield = 'Initial Screen'
-		self.oled_reset = 24
-		self.WIDTH = 128
-		self.HEIGHT = 32
-		self.BORDER = 1
-		self.i2c = board.I2C()
-		self.oled = adafruit_ssd1306.SSD1306_I2C(self.WIDTH, self.HEIGHT, self.i2c, addr=0x3c) #reset taken out
+    def __init__(self):
+        self.textfield = 'Initial Screen'
+        self.oled_reset = 24
+        self.WIDTH = 128
+        self.HEIGHT = 32
+        self.BORDER = 1
+        self.i2c = board.I2C()
+        self.oled = adafruit_ssd1306.SSD1306_I2C(self.WIDTH, self.HEIGHT, self.i2c, addr=0x3c) #reset taken out
 
-	def drawStatus(self, text1, text2):
-    	self.oled.fill(0)
-		self.oled.show()
+    def drawStatus(self, text1, text2):
+        self.oled.fill(0)
+        self.oled.show()
 
-		# Create blank image for drawing.
-		# Make sure to create image with mode '1' for 1-bit color.
-		image = Image.new('1', (self.oled.width, self.oled.height))
+        # Create blank image for drawing.
+        # Make sure to create image with mode '1' for 1-bit color.
+        image = Image.new('1', (self.oled.width, self.oled.height))
 
-		# Get drawing object to draw on image.
-		draw = ImageDraw.Draw(image)
+        # Get drawing object to draw on image.
+        draw = ImageDraw.Draw(image)
 
-		# Draw a white background
-		draw.rectangle((0, 0, self.oled.width, self.oled.height), outline=255, fill=255)
+        # Draw a white background
+        draw.rectangle((0, 0, self.oled.width, self.oled.height), outline=255, fill=255)
 
-		# Draw a smaller inner rectangle
-		draw.rectangle((self.BORDER, self.BORDER, self.oled.width - self.BORDER - 1, self.oled.height - self.BORDER - 1), outline=0, fill=0)
+        # Draw a smaller inner rectangle
+        draw.rectangle((self.BORDER, self.BORDER, self.oled.width - self.BORDER - 1, self.oled.height - self.BORDER - 1), outline=0, fill=0)
 
-		# Load default font.
-		font = ImageFont.load_default()
+        # Load default font.
+        font = ImageFont.load_default()
 
-		# Draw Some Text
-		text1 = text1
-		(font_width, font_height) = font.getsize(text1)
-		draw.text((self.oled.width//2 - font_width//2, self.oled.height//2 - font_height//2), text1, font=font, fill=255)
+        # Draw Some Text
+        text1 = text1
+        (font_width, font_height) = font.getsize(text1)
+        draw.text((self.oled.width//2 - font_width//2, self.oled.height//2 - font_height//2), text1, font=font, fill=255)
 
-		text2 = text2
-		(font_width, font_height) = font.getsize(text1)
-		draw.text((self.oled.width//4 - font_width//2, self.oled.height//4 - font_height//2), text2, font=font, fill=255)
+        text2 = text2
+        (font_width, font_height) = font.getsize(text1)
+        draw.text((self.oled.width//4 - font_width//2, self.oled.height//4 - font_height//2), text2, font=font, fill=255)
 
-		# Display image
-		self.oled.image(image)
-		self.oled.show()
+        # Display image
+        self.oled.image(image)
+        self.oled.show()
 
-	def drawTest(self, text1, text2):
-    	#self.oled.fill(0)
-		#self.oled.show()
+    def drawTest(self, text1, text2):
+        #self.oled.fill(0)
+        #self.oled.show()
 
-		# Create blank image for drawing.
-		# Make sure to create image with mode '1' for 1-bit color.
-		image = Image.new('1', (self.oled.width, self.oled.height))
+        # Create blank image for drawing.
+        # Make sure to create image with mode '1' for 1-bit color.
+        image = Image.new('1', (self.oled.width, self.oled.height))
 
-		# Get drawing object to draw on image.
-		draw = ImageDraw.Draw(image)
+        # Get drawing object to draw on image.
+        draw = ImageDraw.Draw(image)
 
-		# Draw a white background
-		draw.rectangle((0, 0, self.oled.width, self.oled.height), outline=255, fill=255)
+        # Draw a white background
+        draw.rectangle((0, 0, self.oled.width, self.oled.height), outline=255, fill=255)
 
-		# Draw a smaller inner rectangle
-		draw.rectangle((self.BORDER, self.BORDER, self.oled.width - self.BORDER - 1, self.oled.height - self.BORDER - 1), outline=0, fill=0)
+        # Draw a smaller inner rectangle
+        draw.rectangle((self.BORDER, self.BORDER, self.oled.width - self.BORDER - 1, self.oled.height - self.BORDER - 1), outline=0, fill=0)
 
-		# Load default font.
-		font = ImageFont.load_default()
+        # Load default font.
+        font = ImageFont.load_default()
 
-		# Draw Some Text
-		text1 = text1
-		(font_width, font_height) = font.getsize(text1)
-		draw.text((self.oled.width//2 - font_width//2, self.oled.height//2 - font_height//2), text1, font=font, fill=255)
+        # Draw Some Text
+        text1 = text1
+        (font_width, font_height) = font.getsize(text1)
+        draw.text((self.oled.width//2 - font_width//2, self.oled.height//2 - font_height//2), text1, font=font, fill=255)
 
-		text2 = text2
-		(font_width, font_height) = font.getsize(text1)
-		draw.text((self.oled.width//4 - font_width//2, self.oled.height//4 - font_height//2), text2, font=font, fill=255)
+        text2 = text2
+        (font_width, font_height) = font.getsize(text1)
+        draw.text((self.oled.width//4 - font_width//2, self.oled.height//4 - font_height//2), text2, font=font, fill=255)
 
-		# Display image
-		self.oled.image(image)
-		self.oled.show()
+        # Display image
+        self.oled.image(image)
+        self.oled.show()
 
 class voxaDisplay:
     def __init__(self):
