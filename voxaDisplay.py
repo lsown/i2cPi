@@ -18,7 +18,7 @@ class oledDisplay:
 		self.oled_reset = 24
 		self.WIDTH = 128
 		self.HEIGHT = 32
-		self.BORDER = 2
+		self.BORDER = 1
 		self.i2c = board.I2C()
 		self.oled = adafruit_ssd1306.SSD1306_I2C(self.WIDTH, self.HEIGHT, self.i2c, addr=0x3c) #reset taken out
 
@@ -51,7 +51,6 @@ class oledDisplay:
 		(font_width, font_height) = font.getsize(text1)
 		draw.text((self.oled.width//4 - font_width//2, self.oled.height//4 - font_height//2), text2, font=font, fill=255)
 
-
 		# Display image
 		self.oled.image(image)
 		self.oled.show()
@@ -59,6 +58,7 @@ class oledDisplay:
 class voxaDisplay:
     def __init__(self):
         logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.DEBUG)
+        self.oledDrawing = ["PlaceHolder1", "PlaceHolder2"]
 
         '''PCA9537 Registers: 1:Input Port Register | 2: Output Port Register | 3: Polarity Inversion Register | 4: Configuration Register'''
 
@@ -184,35 +184,45 @@ class voxaDisplay:
         return byteLoad 
 
     def queryButtonReg(self):
+        '''Because we are using POGOS, we can occasionally get a momentary disconnect when we are pushing on the buttons. To prevent this, we need to (1) catch this exception - OSError & (2) try a refresh, say 2-3 times.'''
         try:
             buttonState = self.bus.read_byte(0x49, 0x00)
             if buttonState == 0b11110000:
                 logging.info('Both pressed - register read s0&1, i.e. 0b11110000.')
-                self.display.drawStatus(text1='Double-press', text2=('0b11110000'))
+                self.oledDrawing[0] = 'Double-press'
+                self.oledDrawing[1] = '0b11110000'
+                self.display.drawStatus(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
             elif buttonState == 0b11110010:
                 logging.info('Going left - register read s0, i.e. 0b11110010')
-                self.display.drawStatus(text1='Click Left', text2=('0b11110010'))
+                self.oledDrawing[0] = 'Left-click'
+                self.oledDrawing[1] = '0b11110010'
+                self.display.drawStatus(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
             elif buttonState == 0b11110001:
                 logging.info('Going right - register read s1, i.e. 0b11110001')
-                self.display.drawStatus(text1='Click Right', text2=('0b11110001'))
+                self.oledDrawing[0] = 'Right-click'
+                self.oledDrawing[1] = '0b11110001'
+                self.display.drawStatus(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
             elif buttonState == 0b11110011:
-                logging.info('Neither button pushed state')
+                logging.info('Button back at default state')    #we do not draw for this occurence. Note that button release triggers an event detect!
+            else:
+                logging.info('Some other combination has been read')
             time.sleep(0.1) #Lets give a small timeout and then re-read register to cleanup and pull ALERT back up in case it failed to go back up. 
             logging.info('Clean-up register - just in case ALERT is pulled low. Value read is %s' %bin(self.bus.read_byte(0x49, 0x00)))
                 #self.display.drawStatus(text1='Neither button pushed state', text2=('0b11110011'))
-            #else:
+
                 #logging.info('Spurious read %s read.' %bin(buttonState))
                 #self.display.drawStatus(text1='Spurious Read', text2=('?'))
-            #logging.info('Re-reading to clear register on button release')
-            #afterState = self.bus.read_byte(0x49, 0x00)
+
             global exit_loop
             exit_loop = True
+            
         except OSError:
-            logging.info('Remote - OSError... wait 200 mS and re-initialize OLED.')
-            time.sleep(0.2)
+            logging.info('Remote - OSError... wait 100 mS and re-initialize OLED.')
+            time.sleep(0.1)
             buttonState = self.bus.read_byte(0x49, 0x00)
             self.display = oledDisplay() #creates a display object
-            self.display.drawStatus(text1='Restart!', text2=('Ready to Go!'))
+            self.display.drawStatus(text1='Restart!', text2=('Ready to Go!'))   
+            #!--INCOMPLETE--! We need to change this to pick up where it left off instead of a fresh reboot of display menu.
         
 
 
