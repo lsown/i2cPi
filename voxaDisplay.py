@@ -136,7 +136,7 @@ class voxaDisplay:
             
 
     def monitorThread(self):
-        x = threading.Thread(target=self.monitor(), args=(1,), daemon=True)
+        x = threading.Thread(target=self.monitor(), args=(1,))
         x.start()
         logging.info('Thread started.')
 
