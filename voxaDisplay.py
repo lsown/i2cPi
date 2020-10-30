@@ -36,7 +36,7 @@ class oledDisplay:
         draw = ImageDraw.Draw(image)
 
         # Draw a white background
-        draw.rectangle((0, 0, self.oled.width, self.oled.height), outline=255, fill=255)
+        #draw.rectangle((0, 0, self.oled.width, self.oled.height), outline=255, fill=255)
 
         # Draw a smaller inner rectangle
         #draw.rectangle((self.BORDER, self.BORDER, self.oled.width - self.BORDER - 1, self.oled.height - self.BORDER - 1), outline=0, fill=0)
