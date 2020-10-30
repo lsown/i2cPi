@@ -124,15 +124,16 @@ class voxaDisplay:
                 print('%s pin triggered, %s configured state to %s' %(str(channel), self.pinsIn[i]['name'], self.pinsIn[i]['state'])) # debug
 
     def monitor(self, pin = 22):
-        currentVal = GPIO.input(22)
-        time.sleep(2)
-        newVal = GPIO.input(22)
-        if (newVal == 0 and newVal == currentVal):
-            self.bus.read_byte(0x49, 0x00)
-            logging.info('<!--THREAD ALERT--!> Tracked low for extended period of time.')
-            self.display.drawStatus(text1=self.oledDrawing[0], text2=self.oledDrawing[1])   #re-draw what was last there in case it got nuked
-        else:
-            logging.info('<!--Thread--!> Passing')
+        while True:
+            currentVal = GPIO.input(22)
+            time.sleep(2)
+            newVal = GPIO.input(22)
+            if (newVal == 0 and newVal == currentVal):
+                self.bus.read_byte(0x49, 0x00)
+                logging.info('<!--THREAD ALERT--!> Tracked low for extended period of time.')
+                self.display.drawStatus(text1=self.oledDrawing[0], text2=self.oledDrawing[1])   #re-draw what was last there in case it got nuked
+            else:
+                logging.info('<!--Thread--!> Passing')
             
 
     def monitorThread(self):
