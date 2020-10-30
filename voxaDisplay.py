@@ -196,7 +196,7 @@ class voxaDisplay:
             self.display.drawStatus(text1='Double-press', text2=('0b11110000'))
         elif buttonState == 0b11110011:
             logging.info('Neither button pushed state')
-        time.sleep(0.25) #Lets give a small timeout and then re-read register to cleanup and pull ALERT back up in case it failed to go back up. 
+        time.sleep(0.5) #Lets give a small timeout and then re-read register to cleanup and pull ALERT back up in case it failed to go back up. 
         logging.info('Clean-up register - just in case ALERT is pulled low. Value read is %s' %bin(self.bus.read_byte(0x49, 0x00)))
             #self.display.drawStatus(text1='Neither button pushed state', text2=('0b11110011'))
         #else:
