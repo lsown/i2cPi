@@ -98,7 +98,7 @@ class voxaDisplay:
         self.display = oledDisplay() #creates a display object
         self.display.drawStatus(text1='voxaDisplay initialized', text2=('Ready to Go!'))
         self.bus.read_byte(0x49, 0x00)  #Just in case to pull up display ALERT pin
-        #self.monitorDaemon()
+        #self.monitorThread()
 
     def piSetup(self): #Sets up GPIO pins from the MCU DAQ, can also add to GPIO.in <pull_up_down=GPIO.PUD_UP>
 
@@ -135,7 +135,7 @@ class voxaDisplay:
             logging.info('<!--Thread--!> Passing')
             pass
 
-    def monitorDaemon(self):
+    def monitorThread(self):
         x = threading.Thread(target=self.monitor(), args=(1,), daemon=True)
         x.start()
         logging.info('Thread started.')
