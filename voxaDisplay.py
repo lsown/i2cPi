@@ -95,6 +95,7 @@ class voxaDisplay:
         self.tunnel()
         self.display = oledDisplay() #creates a display object
         self.display.drawStatus(text1='voxaDisplay initialized', text2=('Ready to Go!'))
+        self.bus.read_byte(0x49, 0x00)  #Just in case to pull up display ALERT pin
 
     def piSetup(self): #Sets up GPIO pins from the MCU DAQ, can also add to GPIO.in <pull_up_down=GPIO.PUD_UP>
 
