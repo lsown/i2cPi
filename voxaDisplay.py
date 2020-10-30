@@ -60,7 +60,7 @@ class oledDisplay:
         self.oled.image(image)
         self.oled.show()
 
-    def addText(self):
+    def addText(self, text1, text2):
         draw = ImageDraw.Draw(image)
         try:
             font = ImageFont.truetype('arial.ttf', 10)
