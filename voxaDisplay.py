@@ -133,7 +133,7 @@ class voxaDisplay:
             self.display.drawStatus(text1=self.oledDrawing[0], text2=self.oledDrawing[1])   #re-draw what was last there in case it got nuked
         else:
             logging.info('<!--Thread--!> Passing')
-            pass
+            
 
     def monitorThread(self):
         x = threading.Thread(target=self.monitor(), args=(1,), daemon=True)
