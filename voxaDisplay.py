@@ -11,6 +11,8 @@ import board
 from PIL import Image, ImageDraw, ImageFont
 import adafruit_ssd1306
 
+#daemon
+import daemon
 
 class oledDisplay:
 	def __init__(self):
@@ -96,6 +98,7 @@ class voxaDisplay:
         self.display = oledDisplay() #creates a display object
         self.display.drawStatus(text1='voxaDisplay initialized', text2=('Ready to Go!'))
         self.bus.read_byte(0x49, 0x00)  #Just in case to pull up display ALERT pin
+        self.monitorDaemon()
 
     def piSetup(self): #Sets up GPIO pins from the MCU DAQ, can also add to GPIO.in <pull_up_down=GPIO.PUD_UP>
 
@@ -119,6 +122,22 @@ class voxaDisplay:
             if channel == self.pinsIn[i]['pin']:
                 self.pinsIn[i]['state'] = value
                 print('%s pin triggered, %s configured state to %s' %(str(channel), self.pinsIn[i]['name'], self.pinsIn[i]['state'])) # debug
+
+    def monitor(self, pin = 22):
+        currentVal = GPIO.input(22)
+        time.sleep(2)
+        newVal = GPIO.input(22)
+        if (newVal == 0 and newVal == currentVal):
+            self.bus.read_byte(0x49, 0x00)
+            logging.info('<!--ALERT--!> Tracked low for extended period of time.')
+            self.display.drawStatus(text1=self.oledDrawing[0], text2=self.oledDrawing[1])   #re-draw what was last there in case it got nuked
+        else:
+            pass
+
+    def monitorDaemon(self):
+        with daemon.DaemonContext():
+            self.monitor()
+            logging.info('starting daemon')
 
     def buttonPress(self, channel):
         logging.info('<!-------------Button Press Detected-------------!>')
