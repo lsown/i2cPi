@@ -42,7 +42,10 @@ class oledDisplay:
         draw.rectangle((self.BORDER, self.BORDER, self.oled.width - self.BORDER - 1, self.oled.height - self.BORDER - 1), outline=0, fill=0)
 
         # Load default font.
-        font = ImageFont.load_default()
+        try:
+            font = ImageFont.truetype('arial.ttf', 10)
+        except:
+            font = ImageFont.load_default() #default sizing is 6,11, lets use a nicer font.
 
         # Draw Some Text
         text1 = text1
