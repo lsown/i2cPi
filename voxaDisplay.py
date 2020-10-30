@@ -11,8 +11,8 @@ import board
 from PIL import Image, ImageDraw, ImageFont
 import adafruit_ssd1306
 
-#daemon
-import daemon
+#threading
+import threading
 
 class oledDisplay:
 	def __init__(self):
@@ -129,15 +129,16 @@ class voxaDisplay:
         newVal = GPIO.input(22)
         if (newVal == 0 and newVal == currentVal):
             self.bus.read_byte(0x49, 0x00)
-            logging.info('<!--ALERT--!> Tracked low for extended period of time.')
+            logging.info('<!--THREAD ALERT--!> Tracked low for extended period of time.')
             self.display.drawStatus(text1=self.oledDrawing[0], text2=self.oledDrawing[1])   #re-draw what was last there in case it got nuked
         else:
+            logging.info('<!--Thread--!> Passing')
             pass
 
     def monitorDaemon(self):
-        with daemon.DaemonContext():
-            self.monitor()
-            logging.info('starting daemon')
+        x = threading.Thread(target=self.monitor(), args=(1,), daemon=True)
+        x.start()
+        logging.info('Thread started.')
 
     def buttonPress(self, channel):
         logging.info('<!-------------Button Press Detected-------------!>')
@@ -204,6 +205,7 @@ class voxaDisplay:
 
     def queryButtonReg(self):
         '''Because we are using POGOS, we can occasionally get a momentary disconnect when we are pushing on the buttons. To prevent this, we need to (1) catch this exception - OSError & (2) try a refresh, say 2-3 times.'''
+
         try:
             buttonState = self.bus.read_byte(0x49, 0x00)
             if buttonState == 0b11110000:
@@ -236,11 +238,11 @@ class voxaDisplay:
             exit_loop = True
             
         except OSError:
-            logging.info('Remote - OSError... wait 100 mS and re-initialize OLED.')
+            logging.info('<!---EXCEPTION--!>Remote - OSError... wait 100 mS and re-initialize OLED.')
             time.sleep(0.1)
             buttonState = self.bus.read_byte(0x49, 0x00)
             self.display = oledDisplay() #creates a display object
-            self.display.drawStatus(text1='Restart!', text2=('Ready to Go!'))   
+            self.display.drawStatus(text1=self.oledDrawing[0], text2='redraw occured')   
             #!--INCOMPLETE--! We need to change this to pick up where it left off instead of a fresh reboot of display menu.
         
 
