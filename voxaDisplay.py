@@ -25,7 +25,7 @@ class oledDisplay:
 		self.oled = adafruit_ssd1306.SSD1306_I2C(self.WIDTH, self.HEIGHT, self.i2c, addr=0x3c) #reset taken out
 
 	def drawStatus(self, text1, text2):
-    		self.oled.fill(0)
+    	self.oled.fill(0)
 		self.oled.show()
 
 		# Create blank image for drawing.
