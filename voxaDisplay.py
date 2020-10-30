@@ -24,13 +24,16 @@ class oledDisplay:
         self.i2c = board.I2C()
         self.oled = adafruit_ssd1306.SSD1306_I2C(self.WIDTH, self.HEIGHT, self.i2c, addr=0x3c) #reset taken out
 
+        self.oldImage = Image.new('1', (self.oled.width, self.oled.height))
+
     def drawStatus(self, text1, text2):
         self.oled.fill(0)
         self.oled.show()
 
         # Create blank image for drawing.
         # Make sure to create image with mode '1' for 1-bit color.
-        image = Image.new('1', (self.oled.width, self.oled.height))
+        #image = Image.new('1', (self.oled.width, self.oled.height))
+        image = self.oldImage
 
         # Get drawing object to draw on image.
         draw = ImageDraw.Draw(image)
@@ -61,6 +64,7 @@ class oledDisplay:
         self.oled.show()
 
     def addText(self, text1, text2):
+        image = self.oldImage
         draw = ImageDraw.Draw(image)
         try:
             font = ImageFont.truetype('arial.ttf', 10)
