@@ -193,9 +193,9 @@ class voxaDisplay:
         elif buttonState == 0b11110000:
             logging.info('Both pressed - register read s0&1, i.e. 0b11110000.')
             self.display.drawStatus(text1='Double-press', text2=('0b11110000'))
-        '''elif buttonState == 0b11110011:
+        elif buttonState == 0b11110011:
             logging.info('Neither button pushed state')
-            self.display.drawStatus(text1='Neither button pushed state', text2=('0b11110011'))'''
+            #self.display.drawStatus(text1='Neither button pushed state', text2=('0b11110011'))
         else:
             logging.info('Spurious read %s read.' %bin(buttonState))
             #self.display.drawStatus(text1='Spurious Read', text2=('?'))
