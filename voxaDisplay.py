@@ -24,19 +24,26 @@ class oledDisplay:
         self.i2c = board.I2C()
         self.oled = adafruit_ssd1306.SSD1306_I2C(self.WIDTH, self.HEIGHT, self.i2c, addr=0x3c) #reset taken out
 
-        self.oldImage = Image.new('1', (self.oled.width, self.oled.height))
+        self.currentImage = Image.new('1', (self.oled.width, self.oled.height))
+        
+        #define font for display
+        try:
+            self.font = ImageFont.truetype('arial.ttf', 10)
+        except:
+            self.font = ImageFont.load_default() #default sizing is 6,11, lets use a nicer font.
 
-    def drawStatus(self, text1, text2):
+    def drawNew(self, text1, text2):
         self.oled.fill(0)
         self.oled.show()
 
         # Create blank image for drawing.
         # Make sure to create image with mode '1' for 1-bit color.
-        #image = Image.new('1', (self.oled.width, self.oled.height))
-        image = self.oldImage
-
+        image = Image.new('1', (self.oled.width, self.oled.height))
+        self.currentImage = image   #redefine baseline image        
         # Get drawing object to draw on image.
         draw = ImageDraw.Draw(image)
+
+        self.drawArrows()
 
         # Draw a white background
         #draw.rectangle((0, 0, self.oled.width, self.oled.height), outline=255, fill=255)
@@ -45,45 +52,51 @@ class oledDisplay:
         #draw.rectangle((self.BORDER, self.BORDER, self.oled.width - self.BORDER - 1, self.oled.height - self.BORDER - 1), outline=0, fill=0)
 
         # Load default font.
+        '''
         try:
             font = ImageFont.truetype('arial.ttf', 10)
         except:
             font = ImageFont.load_default() #default sizing is 6,11, lets use a nicer font.
-
+        '''
+        
         # Draw Some Text
         text1 = text1
-        (font_width, font_height) = font.getsize(text1)
-        draw.text((self.oled.width//2 - font_width//2, self.oled.height//2 - font_height//2), text1, font=font, fill=255)
+        (font_width, font_height) = self.font.getsize(text1)
+        draw.text((self.oled.width//4 - font_width//2, self.oled.height//2 - font_height//2), text1, font=self.font, fill=255)
 
         text2 = text2
-        (font_width, font_height) = font.getsize(text1)
-        draw.text((self.oled.width//4 - font_width//2, self.oled.height//4 - font_height//2), text2, font=font, fill=255)
+        (font_width, font_height) = self.font.getsize(text1)
+        draw.text((self.oled.width//4 - font_width//2, self.oled.height//4 - font_height//2), text2, font=self.font, fill=255)
 
         # Display image
         self.oled.image(image)
         self.oled.show()
 
-    def addText(self, text1, text2):
-        image = self.oldImage
-        draw = ImageDraw.Draw(image)
+    def drawOnTop(self, text1, text2):
+        draw = ImageDraw.Draw(self.currentImage)
+        '''
         try:
             font = ImageFont.truetype('arial.ttf', 10)
         except:
-            font = ImageFont.load_default() #default sizing is 6,11, lets use a nicer font.
+            font = ImageFont.load_default() #default sizing is 6,11, lets use a nicer font.'''
 
         # Draw Some Text
         text1 = text1
-        (font_width, font_height) = font.getsize(text1)
-        draw.text((self.oled.width//2 - font_width//2, self.oled.height//2 - font_height//2), text1, font=font, fill=255)
+        (font_width, font_height) = self.font.getsize(text1)
+        draw.text((self.oled.width//2 - font_width//2, self.oled.height//2 - font_height//2), text1, font=self.font, fill=255)
 
         text2 = text2
-        (font_width, font_height) = font.getsize(text1)
-        draw.text((self.oled.width//4 - font_width//2, self.oled.height//4 - font_height//2), text2, font=font, fill=255)
+        (font_width, font_height) = self.font.getsize(text1)
+        draw.text((self.oled.width//4 - font_width//2, self.oled.height//4 - font_height//2), text2, font=self.font, fill=255)
 
         # Display image
-        self.oled.image(image)
+        self.oled.image(self.currentImage)
         self.oled.show()
 
+    def drawArrows(self):
+            draw = ImageDraw.Draw(self.currentImage)
+            draw.polygon([(8,24), (0, 16), (24, 8)], fill=1, outline=1)  #left arrow
+            draw.polygon([(120,24), (128, 16), (120, 8)], fill=1, outline=1)  #right arrow
 
 class voxaDisplay:
     def __init__(self):
@@ -124,7 +137,7 @@ class voxaDisplay:
         self.piSetup()
         self.tunnel()
         self.display = oledDisplay() #creates a display object
-        self.display.drawStatus(text1='voxaDisplay initialized', text2=('Ready to Go!'))
+        self.display.drawNew(text1='voxaDisplay initialized', text2=('Ready to Go!'))
         self.bus.read_byte_data(0x49, 0x00)  #Just in case to pull up display ALERT pin
         self.monitorThread()
 
@@ -159,7 +172,7 @@ class voxaDisplay:
             if (newVal == 0 and newVal == currentVal):
                 self.bus.read_byte_data(0x49, 0x00)
                 logging.info('<!--THREAD ALERT--!> Tracked low for extended period of time.')
-                self.display.drawStatus(text1=self.oledDrawing[0], text2=self.oledDrawing[1])   #re-draw what was last there in case it got nuked
+                self.display.drawNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])   #re-draw what was last there in case it got nuked
             else:
                 logging.info('<!--Thread--!> Passing')
             
@@ -241,27 +254,27 @@ class voxaDisplay:
                 logging.info('Both pressed - register read s0&1, i.e. 0b11110000.')
                 self.oledDrawing[0] = 'Double-press'
                 self.oledDrawing[1] = '0b11110000'
-                self.display.drawStatus(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
+                self.display.drawNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
             elif buttonState == 0b11110010:
                 logging.info('Going left - register read s0, i.e. 0b11110010')
                 self.oledDrawing[0] = 'Left-click'
                 self.oledDrawing[1] = '0b11110010'
-                self.display.drawStatus(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
+                self.display.drawNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
             elif buttonState == 0b11110001:
                 logging.info('Going right - register read s1, i.e. 0b11110001')
                 self.oledDrawing[0] = 'Right-click'
                 self.oledDrawing[1] = '0b11110001'
-                self.display.drawStatus(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
+                self.display.drawNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
             elif buttonState == 0b11110011:
                 logging.info('Button back at default state')    #we do not draw for this occurence. Note that button release triggers an event detect!
             else:
                 logging.info('Some other combination has been read')
             time.sleep(0.1) #Lets give a small timeout and then re-read register to cleanup and pull ALERT back up in case it failed to go back up. 
             logging.info('Clean-up register - just in case ALERT is pulled low. Value read is %s' %bin(self.bus.read_byte(0x49, 0x00)))
-                #self.display.drawStatus(text1='Neither button pushed state', text2=('0b11110011'))
+                #self.display.drawNew(text1='Neither button pushed state', text2=('0b11110011'))
 
                 #logging.info('Spurious read %s read.' %bin(buttonState))
-                #self.display.drawStatus(text1='Spurious Read', text2=('?'))
+                #self.display.drawNew(text1='Spurious Read', text2=('?'))
 
             global exit_loop
             exit_loop = True
@@ -271,7 +284,7 @@ class voxaDisplay:
             time.sleep(0.1)
             buttonState = self.bus.read_byte_data(0x49, 0x00)
             self.display = oledDisplay() #creates a display object
-            self.display.drawStatus(text1=self.oledDrawing[0], text2='redraw occured')   
+            self.display.drawNew(text1=self.oledDrawing[0], text2='redraw occured')   
             #!--INCOMPLETE--! We need to change this to pick up where it left off instead of a fresh reboot of display menu.
         
 
