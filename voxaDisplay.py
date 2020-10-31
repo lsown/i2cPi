@@ -28,7 +28,9 @@ class oledDisplay:
         
         #define font for display
         try:
-            self.font = ImageFont.truetype('arial.ttf', 10)
+            #self.font = ImageFont.truetype('arial.ttf', 10)
+            self.font = ImageFont.load_default() #default sizing is 6,11, lets use a nicer font.
+
         except:
             self.font = ImageFont.load_default() #default sizing is 6,11, lets use a nicer font.
 
