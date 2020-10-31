@@ -95,7 +95,7 @@ class oledDisplay:
 
     def drawArrows(self):
             draw = ImageDraw.Draw(self.currentImage)
-            draw.polygon([(8,24), (0, 16), (24, 8)], fill=1, outline=1)  #left arrow
+            draw.polygon([(8,24), (0, 16), (8, 8)], fill=1, outline=1)  #left arrow
             draw.polygon([(120,24), (128, 16), (120, 8)], fill=1, outline=1)  #right arrow
 
 class voxaDisplay:
