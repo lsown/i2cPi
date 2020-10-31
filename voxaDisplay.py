@@ -58,14 +58,12 @@ class oledDisplay:
         except:
             font = ImageFont.load_default() #default sizing is 6,11, lets use a nicer font.
         '''
-        
+
         # Draw Some Text
-        text1 = text1
         (font_width, font_height) = self.font.getsize(text1)
         draw.text((self.oled.width//4 - font_width//2, self.oled.height//2 - font_height//2), text1, font=self.font, fill=255)
 
-        text2 = text2
-        (font_width, font_height) = self.font.getsize(text1)
+        (font_width, font_height) = self.font.getsize(text2)
         draw.text((self.oled.width//4 - font_width//2, self.oled.height//4 - font_height//2), text2, font=self.font, fill=255)
 
         # Display image
@@ -74,19 +72,12 @@ class oledDisplay:
 
     def drawOnTop(self, text1, text2):
         draw = ImageDraw.Draw(self.currentImage)
-        '''
-        try:
-            font = ImageFont.truetype('arial.ttf', 10)
-        except:
-            font = ImageFont.load_default() #default sizing is 6,11, lets use a nicer font.'''
 
         # Draw Some Text
-        text1 = text1
         (font_width, font_height) = self.font.getsize(text1)
         draw.text((self.oled.width//4 - font_width//2, self.oled.height//2 - font_height//2), text1, font=self.font, fill=255)
 
-        text2 = text2
-        (font_width, font_height) = self.font.getsize(text1)
+        (font_width, font_height) = self.font.getsize(text2)
         draw.text((self.oled.width//4 - font_width//2, self.oled.height//4 - font_height//2), text2, font=self.font, fill=255)
 
         # Display image
