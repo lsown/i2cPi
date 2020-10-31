@@ -28,7 +28,7 @@ class oledDisplay:
         
         #define font for display
         try:
-            self.font = ImageFont.truetype('arial.ttf', 15)
+            self.font = ImageFont.truetype('arial.ttf', 14)
             #self.font = ImageFont.load_default() #default sizing is 6,11, lets use a nicer font.
 
         except:
@@ -76,8 +76,8 @@ class oledDisplay:
     def drawText(self, text1, text2, draw):
         '''This assumes size 14 font-height Arial, pre-calculated'''
         (font_width, font_height) = self.font.getsize(text1)
-        draw.text((self.oled.width//2 - font_width//2, 2), text1, font=self.font, fill=255)     #draw line 1
-        draw.text((self.oled.width//2 - font_width//2, 17), text2, font=self.font, fill=255)    #draw line 2
+        draw.text((self.oled.width//2 - font_width//2, 2), text1, font=self.font, align="left", fill=255)     #draw line 1
+        draw.text((self.oled.width//2 - font_width//2, 17), text2, font=self.font, align="left", fill=255)    #draw line 2
 
     def drawBorder(self, draw):
         # Draw a white background
