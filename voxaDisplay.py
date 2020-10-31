@@ -34,47 +34,29 @@ class oledDisplay:
         except:
             self.font = ImageFont.load_default() #default sizing is 6,11, lets use a nicer font.
 
-    def drawNew(self, text1, text2):
+    def displayNew(self, text1, text2):
         self.oled.fill(0)
         self.oled.show()
 
-        # Create blank image for drawing.
-        # Make sure to create image with mode '1' for 1-bit color.
-        image = Image.new('1', (self.oled.width, self.oled.height))
+        image = Image.new('1', (self.oled.width, self.oled.height)) #mode '1' for 1-bit color, creating a fresh image.
         self.currentImage = image   #redefine baseline image        
-        # Get drawing object to draw on image.
-        draw = ImageDraw.Draw(image)
+        draw = ImageDraw.Draw(image)    # Get drawing object to draw on image.
+        self.drawArrows()   #lets draw the arrows
 
-        self.drawArrows()
-
-        # Draw a white background
-        #draw.rectangle((0, 0, self.oled.width, self.oled.height), outline=255, fill=255)
-
-        # Draw a smaller inner rectangle
-        #draw.rectangle((self.BORDER, self.BORDER, self.oled.width - self.BORDER - 1, self.oled.height - self.BORDER - 1), outline=0, fill=0)
-
-        # Load default font.
-        '''
-        try:
-            font = ImageFont.truetype('arial.ttf', 10)
-        except:
-            font = ImageFont.load_default() #default sizing is 6,11, lets use a nicer font.
-        '''
-
-        # Draw Some Text
+        self.drawText(text1, text2, draw)
+        '''# Draw Some Text
         (font_width, font_height) = self.font.getsize(text1)
         draw.text((self.oled.width//2 - font_width//2, self.oled.height//2 - font_height//2), text1, font=self.font, fill=255)
 
         (font_width, font_height) = self.font.getsize(text2)
         draw.text((self.oled.width//2 - font_width//2, self.oled.height//4 - font_height//2), text2, font=self.font, fill=255)
-
+        '''
         # Display image
         self.oled.image(image)
         self.oled.show()
 
     def drawOnTop(self, text1, text2):
         draw = ImageDraw.Draw(self.currentImage)
-
         # Draw Some Text
         (font_width, font_height) = self.font.getsize(text1)
         draw.text((self.oled.width//4 - font_width//2, self.oled.height//2 - font_height//2), text1, font=self.font, fill=255)
@@ -87,9 +69,28 @@ class oledDisplay:
         self.oled.show()
 
     def drawArrows(self):
-            draw = ImageDraw.Draw(self.currentImage)
-            draw.polygon([(8,24), (0, 16), (8, 8)], fill=1, outline=1)  #left arrow
-            draw.polygon([(120,24), (128, 16), (120, 8)], fill=1, outline=1)  #right arrow
+        draw = ImageDraw.Draw(self.currentImage)
+        draw.polygon([(8,24), (0, 16), (8, 8)], fill=1, outline=1)  #left arrow
+        draw.polygon([(120,24), (128, 16), (120, 8)], fill=1, outline=1)  #right arrow
+
+    def drawText(self, text1, text2, draw):
+        '''This assumes size 14 font-height Arial, pre-calculated'''
+        (font_width, font_height) = self.font.getsize(text1)
+        draw.text((self.oled.width//2 - font_width//2, 2), text1, font=self.font, fill=255)     #draw line 1
+        draw.text((self.oled.width//2 - font_width//2, 17), text2, font=self.font, fill=255)    #draw line 2
+
+    def drawBorder(self, draw):
+        # Draw a white background
+        draw.rectangle((0, 0, self.oled.width, self.oled.height), outline=255, fill=255)
+
+        # Draw a smaller inner rectangle
+        draw.rectangle((self.BORDER, self.BORDER, self.oled.width - self.BORDER - 1, self.oled.height - self.BORDER - 1), outline=0, fill=0)
+
+    def drawCenterText(self, text, draw):
+        # Draw Some Text
+        (font_width, font_height) = self.font.getsize(text)
+        draw.text((self.oled.width//4 - font_width//2, self.oled.height//2 - font_height//2), text, font=self.font, fill=255)
+
 
 class voxaDisplay:
     def __init__(self):
@@ -129,8 +130,8 @@ class voxaDisplay:
         self.bus = SMBus(1)
         self.piSetup()
         self.tunnel()
-        self.display = oledDisplay() #creates a display object
-        self.display.drawNew(text1='voxaDisplay initialized', text2=('Ready to Go!'))
+        self.display = oledDisplay() #create a display object from class oledDisplay()
+        self.display.displayNew(text1='voxaDisplay initialized', text2=('Ready to Go!'))
         self.bus.read_byte_data(0x49, 0x00)  #Just in case to pull up display ALERT pin
         self.monitorThread()
 
@@ -165,7 +166,7 @@ class voxaDisplay:
             if (newVal == 0 and newVal == currentVal):
                 self.bus.read_byte_data(0x49, 0x00)
                 logging.info('<!--THREAD ALERT--!> Tracked low for extended period of time.')
-                self.display.drawNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])   #re-draw what was last there in case it got nuked
+                self.display.displayNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])   #re-draw what was last there in case it got nuked
             else:
                 logging.info('<!--Thread--!> Passing')
             
@@ -213,31 +214,6 @@ class voxaDisplay:
         except OSError:
             logging.info('Error 121 - Remote I/O Error on address 77 - TCA9548')
 
-    def validateRegister(self, wantedReg, wantedVal):  
-        #assumes a prior write has been performed so pointer address previously set
-        '''Helper i2c function to check write to register successful.'''
-        readback = self.bus.read_byte(0x2c, 0x00)
-        if wantedVal == readback:
-            logging.info('Validated W/R - Register %s value: (%s, %s, %s)' %(hex(wantedReg), hex(wantedVal), bin(wantedVal), wantedVal))
-        else:
-            logging.info('!--ERROR--! Register %s value is %s, not %s wanted' %(hex(wantedReg),readback, wantedVal))
-
-    def insertBits(self, regAddress, posHi, posLow, payLoad):
-        '''Helper function to insert in a bit payload without impacting surrounding bits in the byte. The regAddress is pointer address, posHi & posLow are bit position to be inserted, payload is wanted binary, ex. 0b11. Example: self.insertBits(0x43, 7, 6, 0b11) will insert in 0b11 into positions 7 & 6 of the byte at address 0x43.'''
-        bitMaskList = [0b0, 0b1, 0b11, 0b111, 0b1111, 0b11111, 0b111111, 0b1111111] #mask list for masking bits 0-6
-        currentReg = self.writeRead(regAddress)
-        posHi = posHi + 1   #shift it up by one
-        bitEndtoHi = (currentReg >> posHi) << posHi
-        #logging.info('insertBits: Hi bit[7:%s] from currentReg is %s' %(posHi, bin(bitEndtoHi)))
-        bitMask = bitMaskList[posLow]
-        bitLowtoEnd = bitMask & currentReg
-        #logging.info('insertBits: Low bitmask applied is %s, bit[%s:0] from currentReg is %s' %(bin(bitMask), posLow, bin(bitLowtoEnd)))
-        bitEnds = bitEndtoHi | bitLowtoEnd  #re-combine prior value with to-be-inserted region zeroed out
-        logging.info('insertBits: Applied final mask is %s' %bin(bitEnds))
-        byteLoad = payLoad << posLow | bitEnds  #shift payload into position & then combine with bitEnds
-        logging.info('insertBits: Final byteload with insertion is %s' %bin(byteLoad))
-        return byteLoad 
-
     def queryButtonReg(self):
         '''Because we are using POGOS, we can occasionally get a momentary disconnect when we are pushing on the buttons. To prevent this, we need to (1) catch this exception - OSError & (2) try a refresh, say 2-3 times.'''
 
@@ -247,27 +223,27 @@ class voxaDisplay:
                 logging.info('Both pressed - register read s0&1, i.e. 0b11110000.')
                 self.oledDrawing[0] = 'Double-press'
                 self.oledDrawing[1] = '0b11110000'
-                self.display.drawNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
+                self.display.displayNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
             elif buttonState == 0b11110010:
                 logging.info('Going left - register read s0, i.e. 0b11110010')
                 self.oledDrawing[0] = 'Left-click'
                 self.oledDrawing[1] = '0b11110010'
-                self.display.drawNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
+                self.display.displayNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
             elif buttonState == 0b11110001:
                 logging.info('Going right - register read s1, i.e. 0b11110001')
                 self.oledDrawing[0] = 'Right-click'
                 self.oledDrawing[1] = '0b11110001'
-                self.display.drawNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
+                self.display.displayNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
             elif buttonState == 0b11110011:
                 logging.info('Button back at default state')    #we do not draw for this occurence. Note that button release triggers an event detect!
             else:
                 logging.info('Some other combination has been read')
             time.sleep(0.1) #Lets give a small timeout and then re-read register to cleanup and pull ALERT back up in case it failed to go back up. 
             logging.info('Clean-up register - just in case ALERT is pulled low. Value read is %s' %bin(self.bus.read_byte_data(0x49, 0x00)))
-                #self.display.drawNew(text1='Neither button pushed state', text2=('0b11110011'))
+                #self.display.displayNew(text1='Neither button pushed state', text2=('0b11110011'))
 
                 #logging.info('Spurious read %s read.' %bin(buttonState))
-                #self.display.drawNew(text1='Spurious Read', text2=('?'))
+                #self.display.displayNew(text1='Spurious Read', text2=('?'))
 
             global exit_loop
             exit_loop = True
@@ -277,7 +253,7 @@ class voxaDisplay:
             time.sleep(0.1)
             buttonState = self.bus.read_byte_data(0x49, 0x00)
             self.display = oledDisplay() #creates a display object
-            self.display.drawNew(text1=self.oledDrawing[0], text2='redraw occured')   
+            self.display.displayNew(text1=self.oledDrawing[0], text2='redraw occured')   
             #!--INCOMPLETE--! We need to change this to pick up where it left off instead of a fresh reboot of display menu.
         
 
