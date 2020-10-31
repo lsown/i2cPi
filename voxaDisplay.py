@@ -63,10 +63,10 @@ class oledDisplay:
 
         # Draw Some Text
         (font_width, font_height) = self.font.getsize(text1)
-        draw.text((self.oled.width//4 - font_width//2, self.oled.height//2 - font_height//2), text1, font=self.font, fill=255)
+        draw.text((self.oled.width//2 - font_width//2, self.oled.height//2 - font_height//2), text1, font=self.font, fill=255)
 
         (font_width, font_height) = self.font.getsize(text2)
-        draw.text((self.oled.width//4 - font_width//2, self.oled.height//4 - font_height//2), text2, font=self.font, fill=255)
+        draw.text((self.oled.width//2 - font_width//2, self.oled.height//4 - font_height//2), text2, font=self.font, fill=255)
 
         # Display image
         self.oled.image(image)
