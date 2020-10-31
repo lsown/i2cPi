@@ -270,7 +270,7 @@ class voxaDisplay:
             else:
                 logging.info('Some other combination has been read')
             time.sleep(0.1) #Lets give a small timeout and then re-read register to cleanup and pull ALERT back up in case it failed to go back up. 
-            logging.info('Clean-up register - just in case ALERT is pulled low. Value read is %s' %bin(self.bus.read_byte(0x49, 0x00)))
+            logging.info('Clean-up register - just in case ALERT is pulled low. Value read is %s' %bin(self.bus.read_byte_data(0x49, 0x00)))
                 #self.display.drawNew(text1='Neither button pushed state', text2=('0b11110011'))
 
                 #logging.info('Spurious read %s read.' %bin(buttonState))
@@ -280,7 +280,7 @@ class voxaDisplay:
             exit_loop = True
             
         except OSError:
-            logging.info('<!---EXCEPTION--!>Remote - OSError... wait 100 mS and re-initialize OLED.')
+            logging.info('<!---EXCEPTION--!>Remote - OSError... wait 100 mS and re-initialize a trial read.')
             time.sleep(0.1)
             buttonState = self.bus.read_byte_data(0x49, 0x00)
             self.display = oledDisplay() #creates a display object
