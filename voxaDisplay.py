@@ -221,7 +221,7 @@ class voxaDisplay:
         '''Because we are using POGOS, we can occasionally get a momentary disconnect when we are pushing on the buttons. To prevent this, we need to (1) catch this exception - OSError & (2) try a refresh, say 2-3 times.'''
 
         try:
-            time.sleep(0.15)
+            
             buttonState = self.bus.read_byte_data(0x49, 0x00)
             if buttonState == 0b11110000:
                 logging.info('Both pressed - register read s0&1, i.e. 0b11110000.')
@@ -229,10 +229,18 @@ class voxaDisplay:
                 self.oledDrawing[1] = '0b11110000'
                 self.display.displayNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
             elif buttonState == 0b11110010:
-                logging.info('Going left - register read s0, i.e. 0b11110010')
-                self.oledDrawing[0] = 'Left-click'
-                self.oledDrawing[1] = '0b11110010'
-                self.display.displayNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
+                time.sleep(0.15)
+                newButtonState = self.bus.read_byte_data(0x49, 0x00)
+                if (newButtonState == buttonState):
+                    logging.info('Going left - register read s0, i.e. 0b11110010')
+                    self.oledDrawing[0] = 'Left-click'
+                    self.oledDrawing[1] = '0b11110010'
+                    self.display.displayNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
+                elif newButtonState == 0b11110000:
+                    logging.info('Both pressed - register read s0&1, i.e. 0b11110000.')
+                    self.oledDrawing[0] = 'Double-press1'
+                    self.oledDrawing[1] = '0b11110000'
+                    self.display.displayNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
             elif buttonState == 0b11110001:
                 logging.info('Going right - register read s1, i.e. 0b11110001')
                 self.oledDrawing[0] = 'Right-click'
