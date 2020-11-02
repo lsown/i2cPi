@@ -221,7 +221,7 @@ class voxaDisplay:
         '''Because we are using POGOS, we can occasionally get a momentary disconnect when we are pushing on the buttons. To prevent this, we need to (1) catch this exception - OSError & (2) try a refresh, say 2-3 times.'''
 
         try:
-            time.sleep(0.25)
+            time.sleep(0.15)
             buttonState = self.bus.read_byte_data(0x49, 0x00)
             if buttonState == 0b11110000:
                 logging.info('Both pressed - register read s0&1, i.e. 0b11110000.')
