@@ -78,8 +78,8 @@ class oledDisplay:
         (font_width, font_height) = self.font.getsize(text1)
         #draw.text((self.oled.width//2 - font_width//2, 2), text1, font=self.font, fill=255)     #draw line 1
         #draw.text((self.oled.width//2 - font_width//2, 17), text2, font=self.font, fill=255)    #draw line 2
-        draw.text((self.oled.width//2 - font_width//2, 2), text1, font=self.font, fill=255)     #draw line 1
-        draw.text((self.oled.width//2 - font_width//2, 17), text2, font=self.font, fill=255)    #draw line 2
+        draw.text((self.oled.width//2 - font_width//2, 2), text1, font=self.font, fill=255, align='center')     #draw line 1
+        draw.text((self.oled.width//2 - font_width//2, 17), text2, font=self.font, fill=255, align ='center')    #draw line 2
 
 
     def drawBorder(self, draw):
