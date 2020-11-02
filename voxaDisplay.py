@@ -223,33 +223,38 @@ class voxaDisplay:
         try:
             
             buttonState = self.bus.read_byte_data(0x49, 0x00)
-            if buttonState == 0b11110000:
+            '''if buttonState == 0b11110000:
                 logging.info('Both pressed - register read s0&1, i.e. 0b11110000.')
                 self.oledDrawing[0] = 'Double-press'
                 self.oledDrawing[1] = '0b11110000'
-                self.display.displayNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
-            elif buttonState == 0b11110010:
+                self.display.displayNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])'''
+            if buttonState == 0b11110010:
                 time.sleep(0.15)
                 newButtonState = self.bus.read_byte_data(0x49, 0x00)
                 if (newButtonState == buttonState):
                     logging.info('Going left - register read s0, i.e. 0b11110010')
                     self.oledDrawing[0] = 'Left-click'
                     self.oledDrawing[1] = '0b11110010'
-                    self.display.displayNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
                 elif newButtonState == 0b11110000:
                     logging.info('Both pressed - register read s0&1, i.e. 0b11110000.')
                     self.oledDrawing[0] = 'Double-press1'
                     self.oledDrawing[1] = '0b11110000'
-                    self.display.displayNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
             elif buttonState == 0b11110001:
-                logging.info('Going right - register read s1, i.e. 0b11110001')
-                self.oledDrawing[0] = 'Right-click'
-                self.oledDrawing[1] = '0b11110001'
-                self.display.displayNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])
+                time.sleep(0.15)
+                newButtonState = self.bus.read_byte_data(0x49, 0x00)
+                if (newButtonState == buttonState):
+                    logging.info('Going right - register read s1, i.e. 0b11110001')
+                    self.oledDrawing[0] = 'Right-click'
+                    self.oledDrawing[1] = '0b11110001'
+                elif newButtonState == 0b11110000:
+                    logging.info('Both pressed - register read s0&1, i.e. 0b11110000.')
+                    self.oledDrawing[0] = 'Double-press1'
+                    self.oledDrawing[1] = '0b11110000'
             elif buttonState == 0b11110011:
                 logging.info('Button back at default state')    #we do not draw for this occurence. Note that button release triggers an event detect!
             else:
                 logging.info('Some other combination has been read')
+            self.display.displayNew(text1=self.oledDrawing[0], text2=self.oledDrawing[1])   #Lets draw the new one
             time.sleep(0.1) #Lets give a small timeout and then re-read register to cleanup and pull ALERT back up in case it failed to go back up. 
             logging.info('Clean-up register - just in case ALERT is pulled low. Value read is %s' %bin(self.bus.read_byte_data(0x49, 0x00)))
                 #self.display.displayNew(text1='Neither button pushed state', text2=('0b11110011'))
