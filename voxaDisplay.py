@@ -131,7 +131,7 @@ class voxaDisplay:
         self.piSetup()
         self.tunnel()
         self.display = oledDisplay() #create a display object from class oledDisplay()
-        self.display.displayNew(text1='voxaDisplay initialized', text2=('Ready to Go!'))
+        self.display.displayNew(text1='voxaDisplay', text2=('Ready to Go!'))
         self.bus.read_byte_data(0x49, 0x00)  #Just in case to pull up display ALERT pin
         self.monitorThread()
 
@@ -218,6 +218,7 @@ class voxaDisplay:
         '''Because we are using POGOS, we can occasionally get a momentary disconnect when we are pushing on the buttons. To prevent this, we need to (1) catch this exception - OSError & (2) try a refresh, say 2-3 times.'''
 
         try:
+            time.sleep(0.5)
             buttonState = self.bus.read_byte_data(0x49, 0x00)
             if buttonState == 0b11110000:
                 logging.info('Both pressed - register read s0&1, i.e. 0b11110000.')
