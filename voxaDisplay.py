@@ -9,7 +9,7 @@ import logging
 #I2C display library
 import board
 from PIL import Image, ImageDraw, ImageFont
-import adafruit_ssd1306
+import Adafruit_SSD1306
 
 #threading
 import threading
@@ -22,7 +22,7 @@ class oledDisplay:
         self.HEIGHT = 32
         self.BORDER = 1
         self.i2c = board.I2C()
-        self.oled = adafruit_ssd1306.SSD1306_I2C(self.WIDTH, self.HEIGHT, self.i2c, addr=0x3c) #reset taken out
+        self.oled = Adafruit_SSD1306.SSD1306_I2C(self.WIDTH, self.HEIGHT, self.i2c, addr=0x3c) #reset taken out
 
         self.currentImage = Image.new('1', (self.oled.width, self.oled.height))
         
