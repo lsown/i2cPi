@@ -23,7 +23,7 @@ class oledDisplay:
         self.BORDER = 1
         self.i2c = board.I2C()
         #self.oled = Adafruit_SSD1306.SSD1306_I2C(self.WIDTH, self.HEIGHT, self.i2c, addr=0x3c) #reset taken out
-        self.oled = Adafruit_SSD1306.SSD1306_128_32(rst=RST)
+        self.oled = Adafruit_SSD1306.SSD1306_128_32(rst=self.oled_reset)
         self.currentImage = Image.new('1', (self.oled.width, self.oled.height))
         
         #define font for display
