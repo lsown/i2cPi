@@ -25,7 +25,6 @@ class oledDisplay:
         self.oled = adafruit_ssd1306.SSD1306_I2C(self.WIDTH, self.HEIGHT, self.i2c, addr=0x3c) #reset taken out
         self.currentImage = Image.new('1', (self.oled.width, self.oled.height))
         self.drawObj = ImageDraw.Draw(self.currentImage)
-
         #define font for display
         try:
             #self.font = ImageFont.truetype('arial.ttf', 14)
@@ -44,7 +43,7 @@ class oledDisplay:
         self.oled.image(image)
         self.oled.show()
 
-    def displayNew(self, text1, text2):
+    '''def displayNew(self, text1, text2):
         self.oled.fill(0)
         self.oled.show()
 
@@ -53,25 +52,24 @@ class oledDisplay:
         self.drawArrows()   #lets draw the arrows
         self.drawText(text1, text2, draw)
         '''# Draw Some Text
-        (font_width, font_height) = self.font.getsize(text1)
+        '''(font_width, font_height) = self.font.getsize(text1)
         draw.text((self.oled.width//2 - font_width//2, self.oled.height//2 - font_height//2), text1, font=self.font, fill=255)
 
         (font_width, font_height) = self.font.getsize(text2)
         draw.text((self.oled.width//2 - font_width//2, self.oled.height//4 - font_height//2), text2, font=self.font, fill=255)
-        '''
+        
         self.currentImage = image   #assign new image to current image
         # Display image
         self.oled.image(image)
-        self.oled.show()
+        self.oled.show()'''
 
-    def drawOnTop(self, text1, text2):
-        draw = ImageDraw.Draw(self.currentImage)
+    def drawText2(self, text1, text2):
         # Draw Some Text
         (font_width, font_height) = self.font.getsize(text1)
-        draw.text((self.oled.width//4 - font_width//2, self.oled.height//2 - font_height//2), text1, font=self.font, fill=255)
+        self.drawObj.text((self.oled.width//4 - font_width//2, self.oled.height//2 - font_height//2), text1, font=self.font, fill=255)
 
         (font_width, font_height) = self.font.getsize(text2)
-        draw.text((self.oled.width//4 - font_width//2, self.oled.height//4 - font_height//2), text2, font=self.font, fill=255)
+        self.drawObj.text((self.oled.width//4 - font_width//2, self.oled.height//4 - font_height//2), text2, font=self.font, fill=255)
 
         # Display image
         self.oled.image(self.currentImage)
