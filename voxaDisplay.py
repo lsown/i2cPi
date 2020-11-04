@@ -37,6 +37,7 @@ class oledDisplay:
         self.oled.fill(0)
         self.oled.show()
 
+        '''Note Image draw is defined from 0, so max coordinates is actually 0 - 127 & 0 - 32'''
     def newImage(self):
         image = Image.new('1', (self.oled.width, self.oled.height)) #mode '1' for 1-bit color, creating a fresh image.
         self.currentImage = image   #re-assign current image object to the new image object
@@ -81,10 +82,15 @@ class oledDisplay:
         self.drawObj.text((self.oled.width//2 - font_width//2, 17), text2, font=self.font, fill=255, align ='center')    #draw line 2
 
     def drawBorder(self):
-        # Draw a white background
-        self.drawObj.rectangle((0, 0, self.oled.width, self.oled.height), outline=255, fill=255)
-        # Draw a smaller inner rectangle
-        self.drawObj.rectangle((self.BORDER, self.BORDER, self.oled.width - self.BORDER - 1, self.oled.height - self.BORDER - 1), outline=0, fill=0)
+        self.drawObj.rectangle((0,0, self.oled.width - 1, self.oled.height - 1), 0, 1)
+        
+    def drawGrid(self):
+        self.drawBorder()
+        for i in range (1, 17):
+            xCoordinate = (8*i) - 1
+            self.drawObj.line([(xCoordinate,0), (xCoordinate, self.oled.height - 1)], 1, 1)
+        self.drawObj.line([(0, self.oled.height / 2 - 1), (self.oled.width - 1)], 1, 1)
+
 
     def drawTextCenter1(self, text):
         # Draw Some Text
