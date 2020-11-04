@@ -150,7 +150,7 @@ class oledDisplay:
 
     def drawPanel(self):
         self.drawGrid()
-        self.drawBluetooth(x=24)
+        self.drawBluetooth(x=26)
         self.drawWifi(8)
         self.drawArrows()
 
