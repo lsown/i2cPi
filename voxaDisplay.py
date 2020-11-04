@@ -84,7 +84,11 @@ class oledDisplay:
         self.drawObj.text((self.oled.width//2 - font_width//2, 17), text2, font=self.font, fill=255, align ='center')    #draw line 2
 
     def drawBorder(self):
-        self.drawObj.rectangle((0,0, self.oled.width - 1, self.oled.height - 1), 0, 1)
+        #self.drawObj.rectangle((0,0, self.oled.width - 1, self.oled.height - 1), 0, 1) #fills in with 0
+        self.drawObj.line([(0,0), (self.oled.width-1, 0)], 1, 1)
+        self.drawObj.line([(0,self.oled.height-1), (self.oled.width-1, self.oled.height-1)], 1, 1)
+        self.drawObj.line([(0,0), (0, self.oled.height-1)], 1, 1)
+        self.drawObj.line([(self.oled.width-1, 0), (self.oled.width-1, self.oled.height-1)], 1, 1)
 
     def drawGrid(self, xDiv = 8, yDiv = 2):
         self.drawBorder()
@@ -108,7 +112,7 @@ class oledDisplay:
         (font_width, font_height) = self.font.getsize(text)
         self.drawObj.text((self.oled.width//4 - font_width//2, self.oled.height//2 - font_height//2), text, font=self.font, fill=255)
 
-    def drawWifi(self, status='ok', x=0, y=0):
+    def drawWifi(self, x=0, y=0, status='ok'):
         '''Draws wifi symbol. If status error, cuts it out and adds exclamation point.'''
         self.drawObj.arc([(x, y), (16+x, 8+y)], 200, 340, 1, 1)    #draw top wifi arc
         self.drawObj.arc([(x, y+4), (16+x, 16+y)], 230, 310, 1, 1)   #draw mid wifi arc
@@ -117,6 +121,21 @@ class oledDisplay:
             self.drawObj.line([(x+5, y), (x+5, y+8)], 0, 2) #cut left side
             self.drawObj.line([(x+10, y), (x+10, y+8)], 0,2)    #cut right side
             self.drawObj.line([(x+8, y), (x+8, y+5)], 1, 3)   #draw straight line for exclamation point
+        elif status == 'ok':
+            pass
+        else:
+            logging.info('invalid status. Nothing returned.')
+            return    
+
+    def drawWifi2(self, x=0, y=0, status='ok'):
+        '''Draws wifi symbol. If status error, cuts it out and adds exclamation point.'''
+        self.drawObj.arc([(x, y), (15+x, 7+y)], 200, 340, 1, 1)    #draw top wifi arc
+        self.drawObj.arc([(x, y+3), (15+x, 15+y)], 230, 310, 1, 1)   #draw mid wifi arc
+        self.drawObj.arc([(x, y+7), (15+x, 15+y)], 260, 280, 1, 1)   #draw little bottom arc
+        if status == 'error':
+            self.drawObj.line([(x+4, y), (x+4, y+7)], 0, 2) #cut left side
+            self.drawObj.line([(x+9, y), (x+9, y+7)], 0,2)    #cut right side
+            self.drawObj.line([(x+7, y), (x+7, y+4)], 1, 3)   #draw straight line for exclamation point
         elif status == 'ok':
             pass
         else:
