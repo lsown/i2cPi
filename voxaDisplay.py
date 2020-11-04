@@ -120,12 +120,12 @@ class oledDisplay:
             logging.info('invalid status. Nothing returned.')
             return    
 
-    def drawBluetooth(self, x=0, y=0, status='ok'):
-        self.drawObj.line([(x+4,y+0), (x+4,y+12)], 1, 1)    #draw vertical line
-        self.drawObj.line([(x+4,y+0), (x+8,y+4)], 1, 1)     #draw -45 degree line top
-        self.drawObj.line([(x+8,y+4), (x+0,y+8)], 1, 1)     #draw  45 degree mid top
-        self.drawObj.line([(x+0,y+4), (x+8,y+8)], 1, 1)     #draw -45 degree mid bot
-        self.drawObj.line([(x+4,y+12), (x+8,y+8)], 1, 1)    #draw -45 degree line bot
+    def drawBluetooth(self, x=0, y=0, status='ok', fill=1):
+        self.drawObj.line([(x+4,y+0), (x+4,y+12)], fill, 1)    #draw vertical line
+        self.drawObj.line([(x+4,y+0), (x+8,y+4)], fill, 1)     #draw -45 degree line top
+        self.drawObj.line([(x+8,y+4), (x+0,y+8)], fill, 1)     #draw  45 degree mid top
+        self.drawObj.line([(x+0,y+4), (x+8,y+8)], fill, 1)     #draw -45 degree mid bot
+        self.drawObj.line([(x+4,y+12), (x+8,y+8)], fill, 1)    #draw -45 degree line bot
         #if status == 'error':
 
 
