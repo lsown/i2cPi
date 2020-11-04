@@ -85,15 +85,23 @@ class oledDisplay:
 
     def drawBorder(self):
         self.drawObj.rectangle((0,0, self.oled.width - 1, self.oled.height - 1), 0, 1)
-        
-    def drawGrid(self):
+
+    def drawGrid(self, xDiv = 8, yDiv = 2):
+        self.drawBorder()
+        for i in range (1, xDiv+1):
+            xCoordinate = ((self.oled.width//xDiv)*i) - 1
+            logging.info('xCoordianate is: %s' %xCoordinate)
+            self.drawObj.line([(xCoordinate,0), (xCoordinate, self.oled.height - 1)], fill=1, width=2)  #lets give it 2-weight to represent end & beginning of the next grid box
+        self.drawObj.line([(0, self.oled.height // yDiv - 1), (self.oled.width - 1, self.oled.height // yDiv - 1)], 1, 2)
+
+    '''def drawGrid(self):
         self.drawBorder()
         for i in range (1, 17):
             xCoordinate = (8*i) - 1
             logging.info('xCoordianate is: %s' %xCoordinate)
             self.drawObj.line([(xCoordinate,0), (xCoordinate, self.oled.height - 1)], fill=1, width=2)  #lets give it 2-weight to represent end & beginning of the next grid box
         self.drawObj.line([(0, self.oled.height // 2 - 1), (self.oled.width - 1, self.oled.height //2 - 1)], 1, 2)
-
+    '''
 
     def drawTextCenter1(self, text):
         # Draw Some Text
