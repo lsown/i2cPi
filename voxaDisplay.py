@@ -149,7 +149,6 @@ class oledDisplay:
             logging.info('Drew error variant of bluetooth.')'''
 
     def drawPanel(self):
-        self.drawGrid()
         self.drawBluetooth(x=26)    #24 + 2
         self.drawWifi(8)            #5 + 2
         self.drawArrows()
