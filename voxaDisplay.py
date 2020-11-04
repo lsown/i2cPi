@@ -65,8 +65,8 @@ class oledDisplay:
         # Display image
 
     def drawArrows(self):
-        self.drawObj.polygon([(8,24), (0, 16), (8, 8)], fill=1, outline=1)  #left arrow
-        self.drawObj.polygon([(119,24), (127, 16), (119, 8)], fill=1, outline=1)  #right arrow - up to pixel position 128-1 = 127.
+        self.drawObj.polygon([(5,24), (0, 16), (5, 8)], fill=1, outline=1)  #left arrow
+        self.drawObj.polygon([(124,24), (127, 16), (124, 8)], fill=1, outline=1)  #right arrow - up to pixel position 128-1 = 127.
 
     def drawTextCenter2(self, text1, text2):
         '''This assumes size 14 font-height Arial, pre-calculated'''
@@ -150,8 +150,9 @@ class oledDisplay:
 
     def drawPanel(self):
         self.drawGrid()
-        self.drawBluetooth(x=18)
-        self.drawWifi()
+        self.drawBluetooth(x=24)
+        self.drawWifi(8)
+        self.drawArrows()
 
 class voxaDisplay:
     def __init__(self):
