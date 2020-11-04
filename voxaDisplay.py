@@ -133,7 +133,7 @@ class oledDisplay:
         self.drawObj.arc([(x, y+3), (15+x, 15+y)], 230, 310, 1, 1)   #draw mid wifi arc
         self.drawObj.arc([(x, y+7), (15+x, 15+y)], 260, 280, 1, 1)   #draw little bottom arc
         if status == 'error':
-            self.drawObj.line([(x+4, y), (x+4, y+7)], 0, 2) #cut left side
+            self.drawObj.line([(x+5, y), (x+5, y+7)], 0, 2) #cut left side
             self.drawObj.line([(x+9, y), (x+9, y+7)], 0,2)    #cut right side
             self.drawObj.line([(x+7, y), (x+7, y+4)], 1, 3)   #draw straight line for exclamation point
         elif status == 'ok':
