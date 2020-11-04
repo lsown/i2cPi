@@ -25,55 +25,40 @@ class oledDisplay:
         self.oled = adafruit_ssd1306.SSD1306_I2C(self.WIDTH, self.HEIGHT, self.i2c, addr=0x3c) #reset taken out
         self.currentImage = Image.new('1', (self.oled.width, self.oled.height))
         self.drawObj = ImageDraw.Draw(self.currentImage)
+        self.font = ImageFont.load_default()
         #define font for display
-        try:
+        '''try:
             #self.font = ImageFont.truetype('arial.ttf', 14)
             self.font = ImageFont.load_default() #default sizing is 6,11, lets use a nicer font.
-
         except:
             self.font = ImageFont.load_default() #default sizing is 6,11, lets use a nicer font.
+        '''
+        #start with a screen wipe to black
+        self.oled.fill(0)
+        self.oled.show()
 
     def newImage(self):
-        self.oled.fill(0)
-        self.oled.show()
         image = Image.new('1', (self.oled.width, self.oled.height)) #mode '1' for 1-bit color, creating a fresh image.
-        self.currentImage = image   #assign new image to current image
+        self.currentImage = image   #re-assign current image object to the new image object
         self.drawObj = ImageDraw.Draw(self.currentImage)    #assign new drawing object
-        self.drawArrows()   #lets draw the arrows
-        self.displayImage()
 
-    '''def displayNew(self, text1, text2):
+    '''Class method prefix display will directly impact OLED'''
+    def displayWipe(self):
         self.oled.fill(0)
         self.oled.show()
-
-        image = Image.new('1', (self.oled.width, self.oled.height)) #mode '1' for 1-bit color, creating a fresh image.
-        draw = ImageDraw.Draw(image)    # Get drawing object to draw on image.
-        self.drawArrows()   #lets draw the arrows
-        self.drawText(text1, text2, draw)
-        # Draw Some Text
-        (font_width, font_height) = self.font.getsize(text1)
-        draw.text((self.oled.width//2 - font_width//2, self.oled.height//2 - font_height//2), text1, font=self.font, fill=255)
-
-        (font_width, font_height) = self.font.getsize(text2)
-        draw.text((self.oled.width//2 - font_width//2, self.oled.height//4 - font_height//2), text2, font=self.font, fill=255)
+        self.newImage()
+        self.displayImage()
         
-        self.currentImage = image   #assign new image to current image
-        # Display image
-        self.oled.image(image)
-        self.oled.show()'''
-
     def displayImage(self):
         self.oled.image(self.currentImage)
         self.oled.show()
 
-    def wipeImage(self):
-        self.oled.fill(0)
-        self.oled.show()
-        image = Image.new('1', (self.oled.width, self.oled.height)) #mode '1' for 1-bit color, creating a fresh image.
-        self.currentImage = image   #assign new image to current image
-        self.drawObj = ImageDraw.Draw(self.currentImage)    #assign new drawing object
+    def displayArrows(self):    #draws arrows on current existing image
+        self.drawArrows()
         self.displayImage()
-        
+
+    '''Class method prefix draw will only act on self.drawObj'''
+
     def drawText2(self, text1, text2):
         # Draw Some Text
         (font_width, font_height) = self.font.getsize(text1)
