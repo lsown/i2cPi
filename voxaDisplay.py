@@ -51,8 +51,8 @@ class oledDisplay:
         draw = ImageDraw.Draw(image)    # Get drawing object to draw on image.
         self.drawArrows()   #lets draw the arrows
         self.drawText(text1, text2, draw)
-        '''# Draw Some Text
-        '''(font_width, font_height) = self.font.getsize(text1)
+        # Draw Some Text
+        (font_width, font_height) = self.font.getsize(text1)
         draw.text((self.oled.width//2 - font_width//2, self.oled.height//2 - font_height//2), text1, font=self.font, fill=255)
 
         (font_width, font_height) = self.font.getsize(text2)
