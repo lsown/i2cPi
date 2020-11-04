@@ -110,8 +110,9 @@ class oledDisplay:
         if status == 'error' or status =='ok':
             self.drawObj.arc([(x, y), (16+x, 8+y)], 200, 340, 1, 1)    #draw top wifi arc
             self.drawObj.arc([(x, y+4), (16+x, 16+y)], 230, 310, 1, 1)   #draw mid wifi arc
-            self.drawObj.arc([(x, y+8), (16+x, 24+y)], 260, 280, 1, 1)   #draw little bottom arc
-            self.drawObj.line([(x+7,y+9), (x+8,y+9)],1,1)
+            #self.drawObj.arc([(x, y+8), (16+x, 24+y)], 260, 280, 1, 1)   #draw little bottom arc
+            self.drawObj.line([(x+6,y+8), (x+10,y+8)],1,1)
+            self.drawObj.line([(x+7,y+9), (x+9,y+9)],1,1)
             logging.info('Drew ok variant of wifi.')
         else:
             logging.info('invalid status. Nothing returned.')
