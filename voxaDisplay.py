@@ -134,8 +134,8 @@ class oledDisplay:
             logging.info('invalid status, only "ok" or "error" accepted. Nothing returned.')
             return
         if status == 'error':
-            self.drawObj.line([(x+10,y+0),(x+10,y+9)], 1,2)
-            self.drawObj.line([(x+10,y+12),(x+10,y+13)], 1,2)
+            self.drawObj.line([(x+10,y+0),(x+10,y+8)], 1,2)
+            self.drawObj.line([(x+10,y+11),(x+10,y+12)], 1,2)
             '''#old version
             self.drawObj.line([(x+4,y+12), (x+8,y+8)], 0, 1)    #erase bottom line
             self.drawObj.arc([(x+3,y+6), (x+11,y+14)],0,360,1,1)   #draw arc
