@@ -40,8 +40,7 @@ class oledDisplay:
         self.currentImage = image   #assign new image to current image
         self.drawObj = ImageDraw.Draw(self.currentImage)    #assign new drawing object
         self.drawArrows()   #lets draw the arrows
-        self.oled.image(image)
-        self.oled.show()
+        self.displayImage()
 
     '''def displayNew(self, text1, text2):
         self.oled.fill(0)
@@ -63,6 +62,10 @@ class oledDisplay:
         self.oled.image(image)
         self.oled.show()'''
 
+    def displayImage(self):
+        self.oled.image(self.currentImage)
+        self.oled.show()
+        
     def drawText2(self, text1, text2):
         # Draw Some Text
         (font_width, font_height) = self.font.getsize(text1)
@@ -72,49 +75,50 @@ class oledDisplay:
         self.drawObj.text((self.oled.width//4 - font_width//2, self.oled.height//4 - font_height//2), text2, font=self.font, fill=255)
 
         # Display image
-        self.oled.image(self.currentImage)
-        self.oled.show()
+        self.displayImage()
 
     def drawArrows(self):
 
         self.drawObj.polygon([(8,24), (0, 16), (8, 8)], fill=1, outline=1)  #left arrow
         self.drawObj.polygon([(119,24), (127, 16), (119, 8)], fill=1, outline=1)  #right arrow - up to pixel position 128-1 = 127.
 
-    def drawTextCenter(self, text1, text2):
+    def drawTextCenter2(self, text1, text2):
         '''This assumes size 14 font-height Arial, pre-calculated'''
         (font_width, font_height) = self.font.getsize(text1)
         #draw.text((self.oled.width//2 - font_width//2, 2), text1, font=self.font, fill=255)     #draw line 1
         #draw.text((self.oled.width//2 - font_width//2, 17), text2, font=self.font, fill=255)    #draw line 2
         self.drawObj.text((self.oled.width//2 - font_width//2, 2), text1, font=self.font, fill=255, align='center')     #draw line 1
         self.drawObj.text((self.oled.width//2 - font_width//2, 17), text2, font=self.font, fill=255, align ='center')    #draw line 2
+        self.displayImage()
 
 
     def drawBorder(self, draw):
         # Draw a white background
         draw.rectangle((0, 0, self.oled.width, self.oled.height), outline=255, fill=255)
-
         # Draw a smaller inner rectangle
         draw.rectangle((self.BORDER, self.BORDER, self.oled.width - self.BORDER - 1, self.oled.height - self.BORDER - 1), outline=0, fill=0)
 
-    def drawCenterText(self, text, draw):
+    def drawTextCenter1(self, text):
         # Draw Some Text
         (font_width, font_height) = self.font.getsize(text)
-        draw.text((self.oled.width//4 - font_width//2, self.oled.height//2 - font_height//2), text, font=self.font, fill=255)
+        self.drawObj.text((self.oled.width//4 - font_width//2, self.oled.height//2 - font_height//2), text, font=self.font, fill=255)
+        self.displayImage()
 
-    def drawWifi(self, draw, status='ok', x=0, y=0):
+    def drawWifi(self, status='ok', x=0, y=0):
         '''Draws wifi symbol. If status error, cuts it out and adds exclamation point.'''
-        draw.arc([(x, y), (16+x, 8+y)], 200, 340, 1, 1)    #draw top wifi arc
-        draw.arc([(x, y), (16+x, 16+y)], 200, 340, 1, 1)   #draw mid wifi arc
-        draw.arc([(x, y), (16+x, 16+y)], 280, 340, 1, 1)   #draw little bottom arc
+        self.drawObj.arc([(x, y), (16+x, 8+y)], 200, 340, 1, 1)    #draw top wifi arc
+        self.drawObj.arc([(x, y), (16+x, 16+y)], 200, 340, 1, 1)   #draw mid wifi arc
+        self.drawObj.arc([(x, y), (16+x, 16+y)], 280, 340, 1, 1)   #draw little bottom arc
         if status == 'error':
-            draw.line([(x+5, y), (x+5, y+8)], 0, 2) #cut left side
-            draw.line([(x+10, y), (x+10, y+8)], 0,2)    #cut right side
-            draw.line([(x+8, y), (x+8, y+5)], 1, 3)   #draw straight line for exclamation point
+            self.drawObj.line([(x+5, y), (x+5, y+8)], 0, 2) #cut left side
+            self.drawObj.line([(x+10, y), (x+10, y+8)], 0,2)    #cut right side
+            self.drawObj.line([(x+8, y), (x+8, y+5)], 1, 3)   #draw straight line for exclamation point
         elif status == 'ok':
             pass
         else:
             logging.info('invalid status. Nothing returned.')
             return    
+        self.displayImage()
 
 class voxaDisplay:
     def __init__(self):
