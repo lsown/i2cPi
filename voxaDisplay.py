@@ -71,6 +71,7 @@ class oledDisplay:
         self.oled.show()
         image = Image.new('1', (self.oled.width, self.oled.height)) #mode '1' for 1-bit color, creating a fresh image.
         self.currentImage = image   #assign new image to current image
+        self.drawObj = ImageDraw.Draw(self.currentImage)    #assign new drawing object
         self.displayImage()
         
     def drawText2(self, text1, text2):
