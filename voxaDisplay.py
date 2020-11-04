@@ -135,9 +135,10 @@ class oledDisplay:
             return
         if status == 'error':
             self.drawObj.line([(x+4,y+12), (x+8,y+8)], 0, 1)    #erase bottom line
-            self.drawObj.arc([(x+3,y+7), (x+11,y+15)],0,360,1,1)   #draw arc
-            self.drawObj.line([(x+4,y+8), (x+10,y+14)],1,1)        #draw -45 degree cross line
-            self.drawObj.line([(x+10,y+8), (x+4,y+14)],1,1)        #draw +45 degree cross line
+            
+            self.drawObj.arc([(x+3,y+6), (x+11,y+14)],0,360,1,1)   #draw arc
+            self.drawObj.line([(x+4,y+7), (x+10,y+13)],1,1)        #draw -45 degree cross line
+            self.drawObj.line([(x+10,y+7), (x+4,y+13)],1,1)        #draw +45 degree cross line
             logging.info('Drew error variant of bluetooth.')
 
 
