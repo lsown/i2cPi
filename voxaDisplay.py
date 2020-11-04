@@ -33,15 +33,22 @@ class oledDisplay:
         except:
             self.font = ImageFont.load_default() #default sizing is 6,11, lets use a nicer font.
 
+    def newImage(self):
+        self.oled.fill(0)
+        self.oled.show()
+        image = Image.new('1', (self.oled.width, self.oled.height)) #mode '1' for 1-bit color, creating a fresh image.
+        self.drawArrows()   #lets draw the arrows
+        self.currentImage = image   #assign new image to current image
+        self.oled.image(image)
+        self.oled.show()
+
     def displayNew(self, text1, text2):
         self.oled.fill(0)
         self.oled.show()
 
         image = Image.new('1', (self.oled.width, self.oled.height)) #mode '1' for 1-bit color, creating a fresh image.
-        self.currentImage = image   #redefine baseline image        
         draw = ImageDraw.Draw(image)    # Get drawing object to draw on image.
         self.drawArrows()   #lets draw the arrows
-
         self.drawText(text1, text2, draw)
         '''# Draw Some Text
         (font_width, font_height) = self.font.getsize(text1)
@@ -50,6 +57,7 @@ class oledDisplay:
         (font_width, font_height) = self.font.getsize(text2)
         draw.text((self.oled.width//2 - font_width//2, self.oled.height//4 - font_height//2), text2, font=self.font, fill=255)
         '''
+        self.currentImage = image   #assign new image to current image
         # Display image
         self.oled.image(image)
         self.oled.show()
@@ -93,6 +101,20 @@ class oledDisplay:
         (font_width, font_height) = self.font.getsize(text)
         draw.text((self.oled.width//4 - font_width//2, self.oled.height//2 - font_height//2), text, font=self.font, fill=255)
 
+    def drawWifi(self, draw, status='ok', x=0, y=0):
+        '''Draws wifi symbol. If status error, cuts it out and adds exclamation point.'''
+        draw.arc([(x, y), (16+x, 8+y)], 200, 340, 1, 1)    #draw top wifi arc
+        draw.arc([(x, y), (16+x, 16+y)], 200, 340, 1, 1)   #draw mid wifi arc
+        draw.arc([(x, y), (16+x, 16+y)], 280, 340, 1, 1)   #draw little bottom arc
+        if status == 'error':
+            draw.line([(x+5, y), (x+5, y+8)], 0, 2) #cut left side
+            draw.line([(x+10, y), (x+10, y+8)], 0,2)    #cut right side
+            draw.line([(x+8, y), (x+8, y+5)], 1, 3)   #draw straight line for exclamation point
+        elif status == 'ok':
+            pass
+        else:
+            logging.info('invalid status. Nothing returned.')
+            return    
 
 class voxaDisplay:
     def __init__(self):
