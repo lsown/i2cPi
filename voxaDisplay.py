@@ -107,8 +107,8 @@ class oledDisplay:
     def drawWifi(self, status='ok', x=0, y=0):
         '''Draws wifi symbol. If status error, cuts it out and adds exclamation point.'''
         self.drawObj.arc([(x, y), (16+x, 8+y)], 200, 340, 1, 1)    #draw top wifi arc
-        self.drawObj.arc([(x, y), (16+x, 16+y)], 200, 340, 1, 1)   #draw mid wifi arc
-        self.drawObj.arc([(x, y), (16+x, 16+y)], 280, 340, 1, 1)   #draw little bottom arc
+        self.drawObj.arc([(x, y+4), (16+x, 16+y)], 230, 310, 1, 1)   #draw mid wifi arc
+        self.drawObj.arc([(x, y+8), (16+x, 16+y)], 260, 280, 1, 1)   #draw little bottom arc
         if status == 'error':
             self.drawObj.line([(x+5, y), (x+5, y+8)], 0, 2) #cut left side
             self.drawObj.line([(x+10, y), (x+10, y+8)], 0,2)    #cut right side
