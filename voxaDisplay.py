@@ -16,6 +16,8 @@ import threading
 
 class oledDisplay:
     def __init__(self):
+        logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.DEBUG)
+
         self.textfield = 'Initial Screen'
         self.oled_reset = 24
         self.WIDTH = 128
