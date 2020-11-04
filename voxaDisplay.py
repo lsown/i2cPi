@@ -107,26 +107,40 @@ class oledDisplay:
 
     def drawWifi(self, x=0, y=0, status='ok'):
         '''Draws wifi symbol. If status error, cuts it out and adds exclamation point.'''
-        self.drawObj.arc([(x, y), (16+x, 8+y)], 200, 340, 1, 1)    #draw top wifi arc
-        self.drawObj.arc([(x, y+4), (16+x, 16+y)], 230, 310, 1, 1)   #draw mid wifi arc
-        self.drawObj.arc([(x, y+8), (16+x, 24+y)], 260, 280, 1, 1)   #draw little bottom arc
+        if status == 'error' or status =='ok':
+            self.drawObj.arc([(x, y), (16+x, 8+y)], 200, 340, 1, 1)    #draw top wifi arc
+            self.drawObj.arc([(x, y+4), (16+x, 16+y)], 230, 310, 1, 1)   #draw mid wifi arc
+            self.drawObj.arc([(x, y+8), (16+x, 24+y)], 260, 280, 1, 1)   #draw little bottom arc
+            logging.info('Drew ok variant of wifi.')
+        else:
+            logging.info('invalid status. Nothing returned.')
+            return
         if status == 'error':
             self.drawObj.line([(x+5, y), (x+5, y+8)], 0, 2) #cut left side
             self.drawObj.line([(x+10, y), (x+10, y+8)], 0,2)    #cut right side
             self.drawObj.line([(x+8, y), (x+8, y+5)], 1, 3)   #draw straight line for exclamation point
-        elif status == 'ok':
-            pass
-        else:
-            logging.info('invalid status. Nothing returned.')
-            return    
+            logging.info('Drew error variant of wifi.')
+                
 
-    def drawBluetooth(self, x=0, y=0, status='ok', fill=1):
-        self.drawObj.line([(x+4,y+0), (x+4,y+12)], fill, 1)    #draw vertical line
-        self.drawObj.line([(x+4,y+0), (x+8,y+4)], fill, 1)     #draw -45 degree line top
-        self.drawObj.line([(x+8,y+4), (x+0,y+8)], fill, 1)     #draw  45 degree mid top
-        self.drawObj.line([(x+0,y+4), (x+8,y+8)], fill, 1)     #draw -45 degree mid bot
-        self.drawObj.line([(x+4,y+12), (x+8,y+8)], fill, 1)    #draw -45 degree line bot
-        #if status == 'error':
+    def drawBluetooth(self, x=3, y=2, status='ok', fill=1):
+        '''default x,y positioned @3,2 so it is roughly center in a 0x16 box'''
+        if status == 'error' or status =='ok':
+            self.drawObj.line([(x+4,y+0), (x+4,y+12)], fill, 1)    #draw vertical line
+            self.drawObj.line([(x+4,y+0), (x+8,y+4)], fill, 1)     #draw -45 degree line top
+            self.drawObj.line([(x+8,y+4), (x+0,y+8)], fill, 1)     #draw +45 degree mid top cross
+            self.drawObj.line([(x+0,y+4), (x+8,y+8)], fill, 1)     #draw -45 degree mid bot cross
+            self.drawObj.line([(x+4,y+12), (x+8,y+8)], fill, 1)    #draw +45 degree line bot
+        else:
+            logging.info('invalid status, only "ok" or "error" accepted. Nothing returned.')
+            return
+        if status == 'error':
+            self.drawObj.line([(x+4,y+12), (x+8,y+8)], 0, 1)    #erase bottom line
+            x.drawObj.arc([(x+3,y+7), (x+11,y+15)],0,360,1,1)   #draw arc
+            x.drawObj.line([(x+4,y+8), (x+10,y+14)],1,1)        #draw -45 degree cross line
+            x.drawObj.line([(x+10,y+8), (x+4,y+14)],1,1)        #draw +45 degree cross line
+            logging.info('Drew error variant of bluetooth.')
+
+
 
 
 class voxaDisplay:
