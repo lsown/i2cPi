@@ -80,7 +80,7 @@ class oledDisplay:
         self.drawObj.text((self.oled.width//2 - font_width//2, 2), text1, font=self.font, fill=255, align='center')     #draw line 1
         self.drawObj.text((self.oled.width//2 - font_width//2, 17), text2, font=self.font, fill=255, align ='center')    #draw line 2
 
-    def drawBorder(self, draw):
+    def drawBorder(self):
         # Draw a white background
         self.drawObj.rectangle((0, 0, self.oled.width, self.oled.height), outline=255, fill=255)
         # Draw a smaller inner rectangle
