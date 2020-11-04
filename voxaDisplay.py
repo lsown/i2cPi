@@ -89,7 +89,7 @@ class oledDisplay:
         for i in range (1, 17):
             xCoordinate = (8*i) - 1
             self.drawObj.line([(xCoordinate,0), (xCoordinate, self.oled.height - 1)], 1, 1)
-        self.drawObj.line([(0, self.oled.height / 2 - 1), (self.oled.width - 1)], 1, 1)
+        self.drawObj.line([(0, self.oled.height // 2 - 1), (self.oled.width - 1, self.oled.height //2 - 1)], 1, 1)
 
 
     def drawTextCenter1(self, text):
