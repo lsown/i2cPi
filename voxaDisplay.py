@@ -80,13 +80,13 @@ class oledDisplay:
         self.drawObj.polygon([(8,24), (0, 16), (8, 8)], fill=1, outline=1)  #left arrow
         self.drawObj.polygon([(119,24), (127, 16), (119, 8)], fill=1, outline=1)  #right arrow - up to pixel position 128-1 = 127.
 
-    def drawText(self, text1, text2, draw):
+    def drawTextCenter(self, text1, text2):
         '''This assumes size 14 font-height Arial, pre-calculated'''
         (font_width, font_height) = self.font.getsize(text1)
         #draw.text((self.oled.width//2 - font_width//2, 2), text1, font=self.font, fill=255)     #draw line 1
         #draw.text((self.oled.width//2 - font_width//2, 17), text2, font=self.font, fill=255)    #draw line 2
-        draw.text((self.oled.width//2 - font_width//2, 2), text1, font=self.font, fill=255, align='center')     #draw line 1
-        draw.text((self.oled.width//2 - font_width//2, 17), text2, font=self.font, fill=255, align ='center')    #draw line 2
+        self.drawObj.text((self.oled.width//2 - font_width//2, 2), text1, font=self.font, fill=255, align='center')     #draw line 1
+        self.drawObj.text((self.oled.width//2 - font_width//2, 17), text2, font=self.font, fill=255, align ='center')    #draw line 2
 
 
     def drawBorder(self, draw):
