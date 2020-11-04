@@ -111,6 +111,7 @@ class oledDisplay:
             self.drawObj.arc([(x, y), (16+x, 8+y)], 200, 340, 1, 1)    #draw top wifi arc
             self.drawObj.arc([(x, y+4), (16+x, 16+y)], 230, 310, 1, 1)   #draw mid wifi arc
             self.drawObj.arc([(x, y+8), (16+x, 24+y)], 260, 280, 1, 1)   #draw little bottom arc
+            self.drawObj.line([(x+7,y+9), (x+8,y+9)],1,1)
             logging.info('Drew ok variant of wifi.')
         else:
             logging.info('invalid status. Nothing returned.')
@@ -120,7 +121,23 @@ class oledDisplay:
             self.drawObj.line([(x+10, y), (x+10, y+8)], 0,2)    #cut right side
             self.drawObj.line([(x+8, y), (x+8, y+5)], 1, 3)   #draw straight line for exclamation point
             logging.info('Drew error variant of wifi.')
-                
+
+    def drawWifi2(self, x=0, y=0, status='ok'):
+        '''Draws wifi symbol. If status error, cuts it out and adds exclamation point.'''
+        if status == 'error' or status =='ok':
+            self.drawObj.arc([(x, y), (16+x, 16+y)], 210, 330, 1, 1)    #draw top wifi arc
+            self.drawObj.arc([(x+2, y+4), (14+x, 20+y)], 225, 315, 1, 1)   #draw mid wifi arc
+            self.drawObj.arc([(x, y+8), (16+x, 24+y)], 260, 280, 1, 1)   #draw little bottom arc
+            logging.info('Drew ok variant of wifi.')
+        else:
+            logging.info('invalid status. Nothing returned.')
+            return
+        if status == 'error':
+            self.drawObj.line([(x+5, y), (x+5, y+8)], 0, 2) #cut left side
+            self.drawObj.line([(x+10, y), (x+10, y+8)], 0,2)    #cut right side
+            self.drawObj.line([(x+8, y), (x+8, y+5)], 1, 3)   #draw straight line for exclamation point
+            logging.info('Drew error variant of wifi.')
+
 
     def drawBluetooth(self, x=2, y=1, status='ok', fill=1):
         '''default x,y positioned @3,2 so it is roughly center in a 0x16 box'''
