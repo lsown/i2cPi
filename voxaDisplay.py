@@ -122,7 +122,7 @@ class oledDisplay:
             logging.info('Drew error variant of wifi.')
                 
 
-    def drawBluetooth(self, x=3, y=1, status='ok', fill=1):
+    def drawBluetooth(self, x=2, y=1, status='ok', fill=1):
         '''default x,y positioned @3,2 so it is roughly center in a 0x16 box'''
         if status == 'error' or status =='ok':
             self.drawObj.line([(x+4,y+0), (x+4,y+12)], fill, 1)    #draw vertical line
@@ -134,12 +134,14 @@ class oledDisplay:
             logging.info('invalid status, only "ok" or "error" accepted. Nothing returned.')
             return
         if status == 'error':
+            self.drawObj.line([(x+10,y+0),(x+10,y+9)], 1,2)
+            self.drawObj.line([(x+10,y+12),(x+10,y+13)], 1,2)
+            '''#old version
             self.drawObj.line([(x+4,y+12), (x+8,y+8)], 0, 1)    #erase bottom line
-
             self.drawObj.arc([(x+3,y+6), (x+11,y+14)],0,360,1,1)   #draw arc
             self.drawObj.line([(x+4,y+7), (x+10,y+13)],1,1)        #draw -45 degree cross line
             self.drawObj.line([(x+10,y+7), (x+4,y+13)],1,1)        #draw +45 degree cross line
-            logging.info('Drew error variant of bluetooth.')
+            logging.info('Drew error variant of bluetooth.')'''
 
 
 
