@@ -24,7 +24,8 @@ class oledDisplay:
         self.i2c = board.I2C()
         self.oled = adafruit_ssd1306.SSD1306_I2C(self.WIDTH, self.HEIGHT, self.i2c, addr=0x3c) #reset taken out
         self.currentImage = Image.new('1', (self.oled.width, self.oled.height))
-        
+        self.drawObj = ImageDraw.Draw(self.currentImage)
+
         #define font for display
         try:
             #self.font = ImageFont.truetype('arial.ttf', 14)
@@ -37,8 +38,9 @@ class oledDisplay:
         self.oled.fill(0)
         self.oled.show()
         image = Image.new('1', (self.oled.width, self.oled.height)) #mode '1' for 1-bit color, creating a fresh image.
-        self.drawArrows()   #lets draw the arrows
         self.currentImage = image   #assign new image to current image
+        self.drawObj = ImageDraw.Draw(self.currentImage)    #assign new drawing object
+        self.drawArrows()   #lets draw the arrows
         self.oled.image(image)
         self.oled.show()
 
@@ -76,9 +78,9 @@ class oledDisplay:
         self.oled.show()
 
     def drawArrows(self):
-        draw = ImageDraw.Draw(self.currentImage)
-        draw.polygon([(8,24), (0, 16), (8, 8)], fill=1, outline=1)  #left arrow
-        draw.polygon([(119,24), (127, 16), (119, 8)], fill=1, outline=1)  #right arrow - up to pixel position 128-1 = 127.
+
+        self.drawObj.polygon([(8,24), (0, 16), (8, 8)], fill=1, outline=1)  #left arrow
+        self.drawObj.polygon([(119,24), (127, 16), (119, 8)], fill=1, outline=1)  #right arrow - up to pixel position 128-1 = 127.
 
     def drawText(self, text1, text2, draw):
         '''This assumes size 14 font-height Arial, pre-calculated'''
