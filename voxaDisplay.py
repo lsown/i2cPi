@@ -66,12 +66,9 @@ class oledDisplay:
 
         (font_width, font_height) = self.font.getsize(text2)
         self.drawObj.text((self.oled.width//4 - font_width//2, self.oled.height//4 - font_height//2), text2, font=self.font, fill=255)
-
         # Display image
-        self.displayImage()
 
     def drawArrows(self):
-
         self.drawObj.polygon([(8,24), (0, 16), (8, 8)], fill=1, outline=1)  #left arrow
         self.drawObj.polygon([(119,24), (127, 16), (119, 8)], fill=1, outline=1)  #right arrow - up to pixel position 128-1 = 127.
 
@@ -82,20 +79,17 @@ class oledDisplay:
         #draw.text((self.oled.width//2 - font_width//2, 17), text2, font=self.font, fill=255)    #draw line 2
         self.drawObj.text((self.oled.width//2 - font_width//2, 2), text1, font=self.font, fill=255, align='center')     #draw line 1
         self.drawObj.text((self.oled.width//2 - font_width//2, 17), text2, font=self.font, fill=255, align ='center')    #draw line 2
-        self.displayImage()
-
 
     def drawBorder(self, draw):
         # Draw a white background
-        draw.rectangle((0, 0, self.oled.width, self.oled.height), outline=255, fill=255)
+        self.drawObj.rectangle((0, 0, self.oled.width, self.oled.height), outline=255, fill=255)
         # Draw a smaller inner rectangle
-        draw.rectangle((self.BORDER, self.BORDER, self.oled.width - self.BORDER - 1, self.oled.height - self.BORDER - 1), outline=0, fill=0)
+        self.drawObj.rectangle((self.BORDER, self.BORDER, self.oled.width - self.BORDER - 1, self.oled.height - self.BORDER - 1), outline=0, fill=0)
 
     def drawTextCenter1(self, text):
         # Draw Some Text
         (font_width, font_height) = self.font.getsize(text)
         self.drawObj.text((self.oled.width//4 - font_width//2, self.oled.height//2 - font_height//2), text, font=self.font, fill=255)
-        self.displayImage()
 
     def drawWifi(self, status='ok', x=0, y=0):
         '''Draws wifi symbol. If status error, cuts it out and adds exclamation point.'''
@@ -111,7 +105,6 @@ class oledDisplay:
         else:
             logging.info('invalid status. Nothing returned.')
             return    
-        self.displayImage()
 
 class voxaDisplay:
     def __init__(self):
