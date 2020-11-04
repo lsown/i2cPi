@@ -105,8 +105,10 @@ class oledDisplay:
         (font_width, font_height) = self.font.getsize(text)
         self.drawObj.text((self.oled.width//4 - font_width//2, self.oled.height//2 - font_height//2), text, font=self.font, fill=255)
 
-    def drawWifi(self, x=0, y=0, status='ok'):
+    def drawWifi(self, x=0, y=2, status='ok'):
         '''Draws wifi symbol. If status error, cuts it out and adds exclamation point.'''
+        '''x,y positioned @ (3,2) centers in a 0x16 box, add (16,16) to (3,2).'''
+
         if status == 'error' or status =='ok':
             self.drawObj.arc([(x, y), (16+x, 8+y)], 200, 340, 1, 1)    #draw top wifi arc
             self.drawObj.arc([(x, y+4), (16+x, 16+y)], 230, 310, 1, 1)   #draw mid wifi arc
@@ -123,25 +125,9 @@ class oledDisplay:
             self.drawObj.line([(x+8, y), (x+8, y+5)], 1, 3)   #draw straight line for exclamation point
             logging.info('Drew error variant of wifi.')
 
-    def drawWifi2(self, x=0, y=0, status='ok'):
-        '''Draws wifi symbol. If status error, cuts it out and adds exclamation point.'''
-        if status == 'error' or status =='ok':
-            self.drawObj.arc([(x, y), (16+x, 16+y)], 210, 330, 1, 1)    #draw top wifi arc
-            self.drawObj.arc([(x+2, y+4), (14+x, 20+y)], 225, 315, 1, 1)   #draw mid wifi arc
-            self.drawObj.arc([(x, y+8), (16+x, 24+y)], 260, 280, 1, 1)   #draw little bottom arc
-            logging.info('Drew ok variant of wifi.')
-        else:
-            logging.info('invalid status. Nothing returned.')
-            return
-        if status == 'error':
-            self.drawObj.line([(x+5, y), (x+5, y+8)], 0, 2) #cut left side
-            self.drawObj.line([(x+10, y), (x+10, y+8)], 0,2)    #cut right side
-            self.drawObj.line([(x+8, y), (x+8, y+5)], 1, 3)   #draw straight line for exclamation point
-            logging.info('Drew error variant of wifi.')
-
-
     def drawBluetooth(self, x=2, y=1, status='ok', fill=1):
-        '''default x,y positioned @3,2 so it is roughly center in a 0x16 box'''
+        '''Draws bluetooth symbol. If status error, cuts it out and adds exclamation point.'''
+        '''x,y positioned @ (3,2) centers in a 0x16 box, add (16,16) to (3,2).'''
         if status == 'error' or status =='ok':
             self.drawObj.line([(x+4,y+0), (x+4,y+12)], fill, 1)    #draw vertical line
             self.drawObj.line([(x+4,y+0), (x+8,y+4)], fill, 1)     #draw -45 degree line top
@@ -154,15 +140,18 @@ class oledDisplay:
         if status == 'error':
             self.drawObj.line([(x+10,y+0),(x+10,y+8)], 1,2)
             self.drawObj.line([(x+10,y+11),(x+10,y+12)], 1,2)
-            '''#old version
+            logging.info('Drew error variant of wifi.')
+            '''#old version with a circle box and x in right corner
             self.drawObj.line([(x+4,y+12), (x+8,y+8)], 0, 1)    #erase bottom line
             self.drawObj.arc([(x+3,y+6), (x+11,y+14)],0,360,1,1)   #draw arc
             self.drawObj.line([(x+4,y+7), (x+10,y+13)],1,1)        #draw -45 degree cross line
             self.drawObj.line([(x+10,y+7), (x+4,y+13)],1,1)        #draw +45 degree cross line
             logging.info('Drew error variant of bluetooth.')'''
 
-
-
+    def drawPanel(self):
+        self.drawGrid()
+        self.drawBluetooth(x=18)
+        self.drawWifi()
 
 class voxaDisplay:
     def __init__(self):
