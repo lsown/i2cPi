@@ -28,18 +28,11 @@ class oledDisplay:
         self.currentImage = Image.new('1', (self.oled.width, self.oled.height))
         self.drawObj = ImageDraw.Draw(self.currentImage)
         self.font = ImageFont.load_default()
-        #define font for display
-        '''try:
-            #self.font = ImageFont.truetype('arial.ttf', 14)
-            self.font = ImageFont.load_default() #default sizing is 6,11, lets use a nicer font.
-        except:
-            self.font = ImageFont.load_default() #default sizing is 6,11, lets use a nicer font.
-        '''
-        #start with a screen wipe to black
-        self.oled.fill(0)
+        #self.font = ImageFont.truetype('arial.ttf', 14)    #commented out, default gives better position accuracy
+        self.oled.fill(0)   #start with a screen wipe to black
         self.oled.show()
 
-        '''Note Image draw is defined from 0, so max coordinates is actually 0 - 127 & 0 - 32'''
+    '''Note Image draw is defined from 0, so max coordinates is actually 0 - 127 & 0 - 32. Line weight adds +'''
     def newImage(self):
         image = Image.new('1', (self.oled.width, self.oled.height)) #mode '1' for 1-bit color, creating a fresh image.
         self.currentImage = image   #re-assign current image object to the new image object
@@ -127,20 +120,14 @@ class oledDisplay:
             logging.info('invalid status. Nothing returned.')
             return    
 
-    def drawWifi2(self, x=0, y=0, status='ok'):
-        '''Draws wifi symbol. If status error, cuts it out and adds exclamation point.'''
-        self.drawObj.arc([(x, y), (15+x, 7+y)], 200, 340, 1, 1)    #draw top wifi arc
-        self.drawObj.arc([(x, y+3), (15+x, 15+y)], 230, 310, 1, 1)   #draw mid wifi arc
-        self.drawObj.arc([(x, y+7), (15+x, 15+y)], 260, 280, 1, 1)   #draw little bottom arc
-        if status == 'error':
-            self.drawObj.line([(x+5, y), (x+5, y+7)], 0, 2) #cut left side
-            self.drawObj.line([(x+9, y), (x+9, y+7)], 0,2)    #cut right side
-            self.drawObj.line([(x+7, y), (x+7, y+4)], 1, 3)   #draw straight line for exclamation point
-        elif status == 'ok':
-            pass
-        else:
-            logging.info('invalid status. Nothing returned.')
-            return    
+    def drawBluetooth(self, x=0, y=0, status='ok'):
+        self.drawObj.line([(x+4,y+0), (x+4,y+12)], 1, 1)    #draw vertical line
+        self.drawObj.line([(x+4,y+0), (x+8,y+4)], 1, 1)     #draw -45 degree line top
+        self.drawObj.line([(x+8,y+4), (x+0,y+8)], 1, 1)     #draw  45 degree mid top
+        self.drawObj.line([(x+0,y+4), (x+8,y+8)], 1, 1)     #draw -45 degree mid bot
+        self.drawObj.line([(x+4,y+12), (x+8,y+8)], 1, 1)    #draw -45 degree line bot
+        #if status == 'error':
+
 
 class voxaDisplay:
     def __init__(self):
