@@ -100,10 +100,15 @@ class oledDisplay:
         self.drawObj.line([(0, self.oled.height // 2 - 1), (self.oled.width - 1, self.oled.height //2 - 1)], 1, 2)
     '''
 
-    def drawTextCenter1(self, text):
+    def drawTextCentered(self, text, position='bottom'):
         # Draw Some Text
         (font_width, font_height) = self.font.getsize(text)
-        self.drawObj.text((self.oled.width//4 - font_width//2, self.oled.height//2 - font_height//2), text, font=self.font, fill=255)
+        if position == 'middle':
+            self.drawObj.text((self.oled.width//4 - font_width//2, self.oled.height//2 - font_height//2), text, font=self.font, fill=255)
+        elif position =='top':
+            self.drawObj.text((self.oled.width//4 - font_width//2, 3), text, font=self.font, fill=255)
+        elif position =='bottom':
+            self.drawObj.text((self.oled.width//4 - font_width//2, self.oled.height//2 + 3), text, font=self.font, fill=255)
 
     def drawWifi(self, x=0, y=2, status='ok'):
         '''Draws wifi symbol. If status error, cuts it out and adds exclamation point.'''
@@ -149,7 +154,7 @@ class oledDisplay:
             logging.info('Drew error variant of bluetooth.')'''
 
     def drawPanel(self):
-        self.drawBluetooth(x=26)    #24 + 2
+        self.drawBluetooth(x=108)    #24 + 2
         self.drawWifi(8)            #5 + 2
         self.drawArrows()
 
