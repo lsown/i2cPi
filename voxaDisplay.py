@@ -162,8 +162,8 @@ class oledDisplay:
         else:
             logging.info('invalid status, only "ok" or "error" accepted. Nothing returned.')
         if status == 'error':
-            self.drawObj.line([(12,0),(12,8)], 1,2)
-            self.drawObj.line([(12,11),(12,12)], 1,2)
+            self.drawObj.line([(x+12,y+0),(x+12,y+8)], 1,2)
+            self.drawObj.line([(x+12,y+11),(x+12,y+12)], 1,2)
             logging.info('Drew error variant of ethernet.')
 
 
