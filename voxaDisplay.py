@@ -146,19 +146,19 @@ class oledDisplay:
             self.drawObj.line([(x+10,y+7), (x+4,y+13)],1,1)        #draw +45 degree cross line
             logging.info('Drew error variant of bluetooth.')'''
 
-    def drawEthernet(self, x=2, y=1, status='ok', fill=1):
+    def drawEthernet(self, x=1, y=1, status='ok', fill=1):
         if status == 'error' or status =='ok':
-            self.drawObj.rectangle([(0,0), (10, 12)], fill=0, outline=1, width=1)
-            self.drawObj.line([(2,2), (8, 2)], 1, 1)
-            self.drawObj.line([(2,2), (8,2)], 1, 1)
-            self.drawObj.line([(2,2), (2,8)], 1, 1)
-            self.drawObj.line([(8,2), (8,8)], 1, 1)
-            self.drawObj.line([(2,2), (2,8)], 1, 1)
-            self.drawObj.line([(2,8), (3,8)], 1, 1)
-            self.drawObj.line([(7,8), (8,8)], 1, 1)
-            self.drawObj.line([(3,8), (3,10)], 1, 1)
-            self.drawObj.line([(7,8), (7,10)], 1, 1)
-            self.drawObj.line([(3,10), (7,10)], 1, 1)
+            self.drawObj.rectangle([(x+0,0), (10, 12)], fill=0, outline=1, width=1)
+            self.drawObj.line([(x+2,y+2), (x+8,y+2)], 1, 1)
+            self.drawObj.line([(x+2,y+2), (x+8,y+2)], 1, 1)
+            self.drawObj.line([(x+2,y+2), (x+2,y+8)], 1, 1)
+            self.drawObj.line([(x+8,y+2), (x+8,y+8)], 1, 1)
+            self.drawObj.line([(x+2,y+2), (x+2,y+8)], 1, 1)
+            self.drawObj.line([(x+2,y+8), (x+3,y+8)], 1, 1)
+            self.drawObj.line([(x+7,y+8), (x+8,y+8)], 1, 1)
+            self.drawObj.line([(x+3,y+8), (x+3,y+10)], 1, 1)
+            self.drawObj.line([(x+7,y+8), (x+7,y+10)], 1, 1)
+            self.drawObj.line([(x+3,y+10), (x+7,y+10)], 1, 1)
         else:
             logging.info('invalid status, only "ok" or "error" accepted. Nothing returned.')
         if status == 'error':
