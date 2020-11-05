@@ -104,11 +104,11 @@ class oledDisplay:
         # Draw Some Text
         (font_width, font_height) = self.font.getsize(text)
         if position == 'middle':
-            self.drawObj.text((self.oled.width//4 - font_width//2, self.oled.height//2 - font_height//2), text, font=self.font, fill=255)
+            self.drawObj.text((self.oled.width//2 - font_width//2, self.oled.height//2 - font_height//2), text, font=self.font, fill=255)
         elif position =='top':
-            self.drawObj.text((self.oled.width//4 - font_width//2, 3), text, font=self.font, fill=255)
+            self.drawObj.text((self.oled.width//2 - font_width//2, 3), text, font=self.font, fill=255)
         elif position =='bottom':
-            self.drawObj.text((self.oled.width//4 - font_width//2, self.oled.height//2 + 3), text, font=self.font, fill=255)
+            self.drawObj.text((self.oled.width//2 - font_width//2, self.oled.height//2 + 3), text, font=self.font, fill=255)
 
     def drawWifi(self, x=0, y=2, status='ok'):
         '''Draws wifi symbol. If status error, cuts it out and adds exclamation point.'''
