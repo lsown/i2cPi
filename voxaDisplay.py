@@ -148,7 +148,7 @@ class oledDisplay:
 
     def drawEthernet(self, x=1, y=1, status='ok', fill=1):
         if status == 'error' or status =='ok':
-            self.drawObj.rectangle([(x+0,0), (10, 12)], fill=0, outline=1, width=1)
+            self.drawObj.rectangle([(x+0,y+0), (x+10, y+12)], fill=0, outline=1, width=1)
             self.drawObj.line([(x+2,y+2), (x+8,y+2)], 1, 1)
             self.drawObj.line([(x+2,y+2), (x+8,y+2)], 1, 1)
             self.drawObj.line([(x+2,y+2), (x+2,y+8)], 1, 1)
