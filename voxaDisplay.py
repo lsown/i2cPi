@@ -68,14 +68,6 @@ class oledDisplay:
         self.drawObj.polygon([(5,24), (0, 16), (5, 8)], fill=1, outline=1)  #left arrow
         self.drawObj.polygon([(122,24), (127, 16), (122, 8)], fill=1, outline=1)  #right arrow - up to pixel position 128-1 = 127.
 
-    def drawTextCenter2(self, text1, text2):
-        '''This assumes size 14 font-height Arial, pre-calculated'''
-        (font_width, font_height) = self.font.getsize(text1)
-        #draw.text((self.oled.width//2 - font_width//2, 2), text1, font=self.font, fill=255)     #draw line 1
-        #draw.text((self.oled.width//2 - font_width//2, 17), text2, font=self.font, fill=255)    #draw line 2
-        self.drawObj.text((self.oled.width//2 - font_width//2, 2), text1, font=self.font, fill=255, align='center')     #draw line 1
-        self.drawObj.text((self.oled.width//2 - font_width//2, 17), text2, font=self.font, fill=255, align ='center')    #draw line 2
-
     def drawBorder(self):
         #self.drawObj.rectangle((0,0, self.oled.width - 1, self.oled.height - 1), 0, 1) #fills in with 0
         self.drawObj.line([(0,0), (self.oled.width-1, 0)], 1, 1)
@@ -84,6 +76,7 @@ class oledDisplay:
         self.drawObj.line([(self.oled.width-1, 0), (self.oled.width-1, self.oled.height-1)], 1, 1)
 
     def drawGrid(self, xDiv = 8, yDiv = 2):
+        '''Helper drawing to visualize the grid spacing available for the OLED display. Default setting divides X into equal 8 blocks & Y in 1/2. Each is divided with OLED '''
         self.drawBorder()
         for i in range (1, xDiv+1):
             xCoordinate = ((self.oled.width//xDiv)*i) - 1
@@ -153,10 +146,33 @@ class oledDisplay:
             self.drawObj.line([(x+10,y+7), (x+4,y+13)],1,1)        #draw +45 degree cross line
             logging.info('Drew error variant of bluetooth.')'''
 
+    def drawEthernet(self, x=2, y=1, status='ok', fill=1):
+        if status == 'error' or status =='ok':
+            self.drawObj.rectangle([(0,0), (10, 12)], fill=0, outline=1, width=1)
+            self.drawObj.line([(2,2), (8, 2)], 1, 1)
+            self.drawObj.line([(2,2), (8,2)], 1, 1)
+            self.drawObj.line([(2,2), (2,8)], 1, 1)
+            self.drawObj.line([(8,2), (8,8)], 1, 1)
+            self.drawObj.line([(2,2), (2,8)], 1, 1)
+            self.drawObj.line([(2,8), (3,8)], 1, 1)
+            self.drawObj.line([(7,8), (8,8)], 1, 1)
+            self.drawObj.line([(3,8), (3,10)], 1, 1)
+            self.drawObj.line([(7,8), (7,10)], 1, 1)
+            self.drawObj.line([(3,10), (7,10)], 1, 1)
+        else:
+            logging.info('invalid status, only "ok" or "error" accepted. Nothing returned.')
+        if status == 'error':
+            self.drawObj.line([(12,0),(12,8)], 1,2)
+            self.drawObj.line([(12,11),(12,12)], 1,2)
+            logging.info('Drew error variant of wifi.')
+
+
+
     def drawPanel(self):
         self.drawBluetooth(x=108)    #24 + 2
         self.drawWifi(8)            #5 + 2
         self.drawArrows()
+
 
 class voxaDisplay:
     def __init__(self):
