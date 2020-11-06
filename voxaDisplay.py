@@ -42,8 +42,9 @@ class oledDisplay:
     def displayWipe(self):
         self.oled.fill(0)
         self.oled.show()
-        self.newImage()
-        self.displayImage()
+        self.drawObj.rectangle([(0,0), (self.WIDTH, self.HEIGHT)], 0)
+        #self.newImage()
+        #self.displayImage()
         
     def displayImage(self):
         self.oled.image(self.currentImage)
@@ -106,8 +107,8 @@ class oledDisplay:
     def drawWifi(self, x=0, y=2, status='ok'):
         '''Draws wifi symbol. If status error, cuts it out and adds exclamation point.'''
         '''x,y positioned @ (3,2) centers in a 0x16 box, add (16,16) to (3,2).'''
-
         if status == 'error' or status =='ok':
+            self.drawObj.rectangle([(x,y), (x+12, y+12)], 0, 0, 1)  #black out area
             self.drawObj.arc([(x, y), (16+x, 8+y)], 200, 340, 1, 1)    #draw top wifi arc
             self.drawObj.arc([(x, y+4), (16+x, 16+y)], 230, 310, 1, 1)   #draw mid wifi arc
             #self.drawObj.arc([(x, y+8), (16+x, 24+y)], 260, 280, 1, 1)   #draw little bottom arc
@@ -148,6 +149,8 @@ class oledDisplay:
 
     def drawEthernet(self, x=1, y=1, status='ok', fill=1):
         if status == 'error' or status =='ok':
+            self.drawObj.rectangle([(x,y), (x+12, y+12)], 0, 0, 1)  #black out area
+            '''ethernet symbol - draw it'''
             self.drawObj.rectangle([(x+0,y+0), (x+10, y+12)], fill=0, outline=1, width=1)
             self.drawObj.line([(x+2,y+2), (x+8,y+2)], 1, 1)
             self.drawObj.line([(x+2,y+2), (x+8,y+2)], 1, 1)
@@ -161,10 +164,11 @@ class oledDisplay:
             self.drawObj.line([(x+3,y+10), (x+7,y+10)], 1, 1)
         else:
             logging.info('invalid status, only "ok" or "error" accepted. Nothing returned.')
+            return
         if status == 'error':
             self.drawObj.line([(x+12,y+0),(x+12,y+8)], 1,2)
             self.drawObj.line([(x+12,y+11),(x+12,y+12)], 1,2)
-            logging.info('Drew error variant of ethernet.')
+        logging.info('Ethernet status icon "%s" drawn.' %status)
 
 
 
