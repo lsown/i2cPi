@@ -155,7 +155,7 @@ class oledDisplay:
                 [(x+2,y+2), (x+8,y+2), (x+8, y+8), 
                 (x+7, y+8), (x+7, y+10), (x+7, y+10), 
                 (x+3, y+10), (x+3, y+8), (x+2, y+8)], 
-                fill=1, outline=1)  #inside ethernet symbol
+                fill=0, outline=1)  #inside ethernet symbol
         else:
             logging.info('drawEthernet: invalid status parameter - status must be "ok" or "error".')
             return
