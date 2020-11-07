@@ -180,7 +180,7 @@ class OledButtons:
             # time.sleep(0.1) #Lets give a small timeout and then re-read register to cleanup and pull ALERT back up in case it failed to go back up. 
             logging.info('queryButton: Clean-up register - just in case ALERT is pulled low. Value read is %s' %bin(self.bus.read_byte_data(0x49, 0x00)))
             
-            time.sleep(0.5) #lets delay 1/2 second for a button push, then re-read down there
+            time.sleep(0.3) #lets delay 1/2 second for a button push, then re-read down there
             input_register_value = self.bus.read_byte_data(self.address, self.input_register_pointer)
             return input_register_value
             #global exit_loop
