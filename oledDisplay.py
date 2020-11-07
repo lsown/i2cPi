@@ -14,6 +14,9 @@ import adafruit_ssd1306
 #threading
 import threading
 
+
+
+
 class OledDisplay:
     def __init__(self, i2cAddress=0x3c):
         logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.DEBUG)
@@ -492,3 +495,5 @@ class legacyDisplayCode:
 
 
 
+MCUSetup()
+OledDisplay()
