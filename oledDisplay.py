@@ -42,7 +42,7 @@ class OledDisplay:
         self.drawObj = ImageDraw.Draw(self.currentImage)    #assign new drawing object
 
     '''Class method prefix display will directly impact OLED'''
-    def displayWipe(self, x=self.WIDTH, y=self.HEIGHT):
+    def displayWipe(self):
         self.drawObj.rectangle([(0,0), (self.WIDTH, self.HEIGHT)], 0)   #black out canvas
         self.oled.fill(0)   #fill oled with 0
         self.oled.show()    #show oled
