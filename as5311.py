@@ -11,7 +11,7 @@ class AS5311:
         self.device = 0 #use default CS0 pin on Pi
         self.spi.open(self.bus, self.device)
         self.spi.max_speed_hz = 500000  #lets set the SPI bus to 500kHz
-        self.spi.mode = 2    #lets set to mode 2 for default reading, note, when we change to magnetic strength sensing, we need to swap to spi mode 1.
+        self.spi.mode = 3    #lets set to mode 3 for default reading, note, when we change to magnetic strength sensing, we need to swap to spi mode 0.
 
     def ssi_extraction(self, mode):
         '''SSI comms from the device loses the 1st bit, so its technically 7, 8, 8 relevant bits coming in'''
@@ -71,17 +71,17 @@ class AS5311:
         error_report += ' Error.'
         return error_report
 
-    def report(self, mode = 2):
+    def report(self, mode = 3):
         combined_word = self.ssi_extraction(mode = mode)
         databits = combined_word >> 6
         if mode == 2:
-            print('%s absolute position - mode 2' %databits)
+            print('%s (%s) position - inverted - mode 2' %(databits, bin(databits))
         elif mode == 3:
-            print('%s absolute position invert data mode - mode 3' %databits)
+            print('%s (%s) position - mode 3' %(databits, bin(databits))
         elif mode == 1:
-            print('%s mT field strength - mode 1' %databits)
+            print('%s (%s) mT field strength inverted - mode 1' %(databits, bin(databits))
         elif mode == 0:
-            print('%s mT field strength invert data mode - mode 0' %databits)
+            print('%s (%s) mT field strength - mode 0' %(databits, bin(databits))
 
         self.report_zrange(combined_word)   #prints z-range
         print(self.check_errors(combined_word))
