@@ -75,13 +75,13 @@ class AS5311:
         combined_word = self.ssi_extraction(mode = mode)
         databits = combined_word >> 6
         if mode == 2:
-            print('%s (%s) position - inverted - mode 2' %(databits, bin(databits))
+            print('%s (%s) position - inverted - mode 2' %(databits, bin(databits)))
         elif mode == 3:
-            print('%s (%s) position - mode 3' %(databits, bin(databits))
+            print('%s (%s) position - mode 3' %(databits, bin(databits)))
         elif mode == 1:
-            print('%s (%s) mT field strength inverted - mode 1' %(databits, bin(databits))
+            print('%s (%s) mT field strength inverted - mode 1' %(databits, bin(databits)))
         elif mode == 0:
-            print('%s (%s) mT field strength - mode 0' %(databits, bin(databits))
+            print('%s (%s) mT field strength - mode 0' %(databits, bin(databits)))
 
         self.report_zrange(combined_word)   #prints z-range
         print(self.check_errors(combined_word))
