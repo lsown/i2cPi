@@ -71,9 +71,9 @@ class AS5311:
             combined_word = self.ssi_extraction(mode = 2)
             abs_position = combined_word >> 6
             print('%s absolute position' %abs_position)
-        elif word_type == 'magnetic':
-            field_strength = combined_word >> 6
+        elif word_type == 'field':
             combined_word = self.ssi_extraction(mode = 1)
+            field_strength = combined_word >> 6
             print('%s mT field strength' %field_strength)
         else:
             print('Invalid word type')
