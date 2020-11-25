@@ -71,17 +71,18 @@ class AS5311:
         error_report += ' Error.'
         return error_report
 
-    def report(self, word_type = 'position'):
-        if word_type == 'position':
-            combined_word = self.ssi_extraction(mode = 2)
-            abs_position = combined_word >> 6
-            print('%s absolute position' %abs_position)
-        elif word_type == 'field':
-            combined_word = self.ssi_extraction(mode = 1)
-            field_strength = combined_word >> 6
-            print('%s mT field strength' %field_strength)
-        else:
-            print('Invalid word type')
+    def report(self, mode = 2):
+        combined_word = self.ssi_extraction(mode = mode)
+        databits = combined_word >> 6
+        if mode == 2:
+            print('%s absolute position - mode 2' %databits)
+        elif mode == 3:
+            print('%s absolute position invert data mode - mode 3' %databits)
+        elif mode == 1:
+            print('%s mT field strength - mode 1' %databits)
+        elif mode == 0:
+            print('%s mT field strength invert data mode - mode 0' %databits)
+
         self.report_zrange(combined_word)   #prints z-range
         print(self.check_errors(combined_word))
         print('%s binary word' %bin(combined_word))
