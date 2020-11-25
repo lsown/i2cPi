@@ -59,7 +59,7 @@ class AS5311:
         ocf = (0b100 & error_bits) >> 2
         cof = (0b010 & error_bits) >> 1
         linearity = (0b001 & error_bits)
-        if ocf == 1:
+        if ocf == 0:
             return 'OCF Error'
         if cof == 1:
             return 'COF Error'
