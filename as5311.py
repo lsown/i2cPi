@@ -38,8 +38,8 @@ class AS5311:
     def report_zrange(self, combined_word):
         zrange_lookup = {0b000 : {'state': 'green - static', 'range': '10..40 mT', 'distance': 'static'},
                         0b010 : {'state': 'green - dynamic', 'range': '10..40 mT', 'distance': 'increase'},
-                        0b100 : {'state': 'green - dynamic', 'range': '10..40 mT', 'distance': 'decrease'},
-                        0b110 : {'state': 'yellow - reduced accuracy', 'range': '3.4..54.5 mT', 'distance': 'n/a'},
+                        0b001 : {'state': 'green - dynamic', 'range': '10..40 mT', 'distance': 'decrease'},
+                        0b011 : {'state': 'yellow - reduced accuracy', 'range': '3.4..54.5 mT', 'distance': 'n/a'},
                         0b111 : {'state': 'red - inaccurate', 'range': 'field < 3.4 mT | > 54.5 mT', 'distance': 'n/a'},
                         }
         magnetic_bits = (combined_word & 0b1111) >> 1   #mask off last 4 bits and shift off parity bit
