@@ -60,12 +60,14 @@ class AS5311:
         cof = (0b010 & error_bits) >> 1
         linearity = (0b001 & error_bits)
         if ocf == 0:
-            return 'OCF Error'
+            error_report = 'OCF'
         if cof == 1:
-            return 'COF Error'
+            error_report += ', COF'
         if linearity == 1: 
-            return 'Linearity Error'
-    
+            error_report += 'Linearity'
+        error_report += ' Error.'
+        return error_report
+
     def report(self, word_type = 'position'):
         if word_type == 'position':
             combined_word = self.ssi_extraction(mode = 2)
