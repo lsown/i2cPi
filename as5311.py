@@ -59,12 +59,15 @@ class AS5311:
         ocf = (0b100 & error_bits) >> 2
         cof = (0b010 & error_bits) >> 1
         linearity = (0b001 & error_bits)
+        error_report = ''
         if ocf == 0:
             error_report = 'OCF'
         if cof == 1:
             error_report += ', COF'
         if linearity == 1: 
             error_report += 'Linearity'
+        if error_bits == 0b100:
+            error_report += 'No'
         error_report += ' Error.'
         return error_report
 
