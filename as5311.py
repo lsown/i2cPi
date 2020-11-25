@@ -79,3 +79,4 @@ class AS5311:
             print('Invalid word type')
         self.report_zrange(combined_word)   #prints z-range
         print(self.check_errors(combined_word))
+        print('%s binary word' %bin(combined_word))
