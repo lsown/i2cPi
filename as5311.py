@@ -61,9 +61,9 @@ class AS5311:
         linearity = (0b001 & error_bits)
         if ocf == 1:
             return 'OCF Error'
-        elif cof ==1:
+        if cof == 1:
             return 'COF Error'
-        elif linearity ==1: 
+        if linearity == 1: 
             return 'Linearity Error'
     
     def report(self, word_type = 'position'):
