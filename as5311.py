@@ -65,7 +65,7 @@ class AS5311:
         if cof == 1:
             error_report += ', COF'
         if linearity == 1: 
-            error_report += 'Linearity'
+            error_report += ', Linearity'
         if error_bits == 0b100:
             error_report += 'No'
         error_report += ' Error.'
