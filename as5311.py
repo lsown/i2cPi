@@ -80,19 +80,23 @@ class AS5311:
         if mode == 3:
             print('Position: %s. SPI mode 3 (bin: %s | hex: %s) ' %(databits, bin(databits),hex(databits)))
         elif mode == 0:
-            print('Field Strength: %s mT. SPI mode 0 (bin: %s | hex: %s).' %(databits, bin(databits), hex(databits)))
+            print('Field Strength: %s (0-4096 proportional). SPI mode 0 (bin: %s | hex: %s).' %(databits, bin(databits), hex(databits)))
+            print(self.fieldstrength_calculator(combined_word))
         elif mode == 2:
             print('Position: %s. SPI mode 2 - invalid data [wrong clock edge] (bin: %s | hex: %s) ' %(databits, bin(databits),hex(databits)))
         elif mode == 1:
-            print('Field Strength: %s mT. SPI mode 1 - invalid data [wrong clock edge] (bin: %s | hex: %s) ' %(databits, bin(databits),hex(databits)))
+            print('Field Strength: %s (0-4096 proportional). SPI mode 1 - invalid data [wrong clock edge] (bin: %s | hex: %s) ' %(databits, bin(databits),hex(databits)))
+            print(self.fieldstrength_calculator(combined_word))
         self.report_zrange(combined_word)   #prints z-range info
         print(self.check_errors(combined_word)) #prints error bit checks
 
     def fieldstrength_calculator(self, combined_word):
         msb_eight = combined_word >> 10
         if msb_eight == 0x3F:
-            return
+            return 'Field between 10-40 mT'
         elif (0x20 < msb_eight < 0x3F) or (0x3F < msb_eight < 0x5F):
-            return
+            return 'Field between 3.4-10 mT'
+        elif (0x3F < msb_eight < 0x5F):
+            return 'Field between 40-54.5 mT'
         else:
-            print('Outside of valid range')
+            return 'ERROR: Outside of valid range 3.4 - 54.5 mT. Service stage.'
