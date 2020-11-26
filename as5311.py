@@ -21,7 +21,7 @@ class AS5311:
         middle_word = payload[1] << 8    #bit shift word by 8
         end_word = payload[2] >> 5  #lose the last 5 bits
         print('%s %s %s' %(bin(beg_word), bin(middle_word), bin(end_word)))
-        combined_word = (beg_word | middle_word | end_word) >> 5    #combine and shift by 5 to get final 18-bit word
+        combined_word = (beg_word | middle_word | end_word)    #combine and shift by 5 to get final 18-bit word
         return combined_word
         
     def position_word(self):
