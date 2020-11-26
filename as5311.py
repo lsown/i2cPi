@@ -93,10 +93,10 @@ class AS5311:
     def fieldstrength_calculator(self, combined_word):
         msb_eight = combined_word >> 10
         if msb_eight == 0x3F:
-            return 'Field Strength Range: between 10-40 mT'
+            return 'Field Strength Range: 10-40 mT, optimal.'
         elif (0x20 < msb_eight < 0x3F) or (0x3F < msb_eight < 0x5F):
-            return 'Field Strength Range: 3.4-10 mT'
+            return 'Field Strength Range: 3.4-10 mT, too weak but usable with inaccuracies.'
         elif (0x3F < msb_eight < 0x5F):
-            return 'Field Strength Range: 40-54.5 mT'
+            return 'Field Strength Range: 40-54.5 mT, too strong but usable with inaccuracies.'
         else:
-            return 'Field Strength Range: ERROR! Outside of 3.4 - 54.5 mT.'
+            return 'Field Strength Range: ERROR! Outside of 3.4 - 54.5 mT, data inaccurate.'
