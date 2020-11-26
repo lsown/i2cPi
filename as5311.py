@@ -23,7 +23,7 @@ class AS5311:
         end_word = payload[2]  #lose the last 5 bits
         print('Bit check - Treated Words: %s %s %s' %(bin(beg_word), bin(middle_word), bin(end_word)))
         combined_word = (beg_word | middle_word | end_word) >> 5   #combine and shift by 5 to get final 18-bit word
-        print('Bit check - Combined Word: %s' %combined_word)
+        print('Bit check - Combined Word: %s' %bin(combined_word))
         return combined_word
         
     def position_word(self):
@@ -39,11 +39,11 @@ class AS5311:
         return field_strength
 
     def report_zrange(self, combined_word):
-        zrange_lookup = {0b000 : {'state': 'green - static', 'range': '10..40 mT', 'distance': 'static'},
-                        0b010 : {'state': 'green - dynamic', 'range': '10..40 mT', 'distance': 'increase'},
-                        0b001 : {'state': 'green - dynamic', 'range': '10..40 mT', 'distance': 'decrease'},
-                        0b011 : {'state': 'yellow - reduced accuracy', 'range': '3.4..54.5 mT', 'distance': 'n/a'},
-                        0b111 : {'state': 'red - inaccurate', 'range': 'field < 3.4 mT | > 54.5 mT', 'distance': 'n/a'},
+        zrange_lookup = {0b000 : {'state': 'Green - static', 'range': '10..40 mT', 'distance': 'static'},
+                        0b010 : {'state': 'Green - increasing field', 'range': '10..40 mT', 'distance': 'increase'},
+                        0b001 : {'state': 'Green - decreasing field', 'range': '10..40 mT', 'distance': 'decrease'},
+                        0b011 : {'state': 'Yellow - Under / Over mT - reduced accuracy', 'range': '3.4..54.5 mT', 'distance': 'n/a'},
+                        0b111 : {'state': 'Red - ERROR - signficant under / over mT', 'range': 'field < 3.4 mT | > 54.5 mT', 'distance': 'n/a'},
                         }
         magnetic_bits = (combined_word & 0b1111) >> 1   #mask off last 4 bits and shift off parity bit
         for bits in zrange_lookup:
