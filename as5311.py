@@ -39,17 +39,17 @@ class AS5311:
         return field_strength
 
     def report_zrange(self, combined_word):
-        zrange_lookup = {0b000 : {'Z-axis Range': 'Green - static', 'range': '10..40 mT', 'distance': 'static'},
-                        0b010 : {'Z-axis Range': 'Green - increasing field', 'range': '10..40 mT', 'distance': 'increase'},
-                        0b001 : {'Z-axis Range': 'Green - decreasing field', 'range': '10..40 mT', 'distance': 'decrease'},
-                        0b011 : {'Z-axis Range': 'Yellow - Under / Over mT - reduced accuracy', 'range': '3.4..54.5 mT', 'distance': 'n/a'},
-                        0b111 : {'Z-axis Range': 'Red - ERROR - signficant under / over mT', 'range': 'field < 3.4 mT | > 54.5 mT', 'distance': 'n/a'},
+        zrange_lookup = {0b000 : {'state': 'Green - static', 'range': '10..40 mT', 'distance': 'static'},
+                        0b010 : {'state': 'Green - increasing field', 'range': '10..40 mT', 'distance': 'increase'},
+                        0b001 : {'state': 'Green - decreasing field', 'range': '10..40 mT', 'distance': 'decrease'},
+                        0b011 : {'state': 'Yellow - Under / Over mT - reduced accuracy', 'range': '3.4..54.5 mT', 'distance': 'n/a'},
+                        0b111 : {'state': 'Red - ERROR - signficant under / over mT', 'range': 'field < 3.4 mT | > 54.5 mT', 'distance': 'n/a'},
                         }
         magnetic_bits = (combined_word & 0b1111) >> 1   #mask off last 4 bits and shift off parity bit
         for bits in zrange_lookup:
             if magnetic_bits == bits:
                 for items in zrange_lookup[bits]:
-                    print('Zrange - %s : %s.' %(items, zrange_lookup[bits][items]))
+                    print('Z-axis range indicator %s : %s.' %(items, zrange_lookup[bits][items]))
                 return  #EXIT OUT OF LOOP
 
     def parity_check(self, combined_word):
