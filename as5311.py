@@ -76,18 +76,17 @@ class AS5311:
     def report(self, mode = 3):
         combined_word = self.ssi_extraction(mode = mode)
         databits = combined_word >> 6
+        '''Do not use mode 2 or 1, these are just experimental test modes to see what data comes back during development.'''
         if mode == 3:
-            print('%s (bin: %s | hex: %s) position - mode 3' %(databits, bin(databits),hex(databits)))
-        elif mode == 2:
-            print('%s (bin: %s | hex: %s) position - inverted - mode 2' %(databits, bin(databits),hex(databits)))
+            print('Position: %s. SPI mode 3 (bin: %s | hex: %s) ' %(databits, bin(databits),hex(databits)))
         elif mode == 0:
-            print('%s (bin: %s | hex: %s) mT field strength - mode 0' %(databits, bin(databits), hex(databits)))
+            print('Field Strength: %s mT. SPI mode 0 (bin: %s | hex: %s).' %(databits, bin(databits), hex(databits)))
+        elif mode == 2:
+            print('Position: %s. SPI mode 2 - invalid data [wrong clock edge] (bin: %s | hex: %s) ' %(databits, bin(databits),hex(databits)))
         elif mode == 1:
-            print('%s (bin: %s | hex: %s) mT field strength inverted - mode 1' %(databits, bin(databits),hex(databits)))
-
-        self.report_zrange(combined_word)   #prints z-range
-        print(self.check_errors(combined_word))
-        
+            print('Field Strength: %s mT. SPI mode 1 - invalid data [wrong clock edge] (bin: %s | hex: %s) ' %(databits, bin(databits),hex(databits)))
+        self.report_zrange(combined_word)   #prints z-range info
+        print(self.check_errors(combined_word)) #prints error bit checks
 
     def fieldstrength_calculator(self, combined_word):
         msb_eight = combined_word >> 10
