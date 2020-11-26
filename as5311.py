@@ -17,11 +17,12 @@ class AS5311:
         '''SSI comms from the device loses the 1st bit, so its technically 7, 8, 8 relevant bits coming in'''
         self.spi.mode = mode    #Use 2 for position data, use 1 for field strength data
         payload = self.spi.readbytes(3)
+        print('Payload: %s %s %s' %(bin(payload[0]), bin(payload[1]), bin(payload[2])))
         beg_word = (payload[0] & 0b01111111) << 16   #mask off bit-7 MSB, then shift in space for 16 bits 
         middle_word = payload[1] << 8    #bit shift word by 8
-        end_word = payload[2] >> 5  #lose the last 5 bits
-        print('%s %s %s' %(bin(beg_word), bin(middle_word), bin(end_word)))
-        combined_word = (beg_word | middle_word | end_word)    #combine and shift by 5 to get final 18-bit word
+        end_word = payload[2]  #lose the last 5 bits
+        print('Shifted: %s %s %s' %(bin(beg_word), bin(middle_word), bin(end_word)))
+        combined_word = (beg_word | middle_word | end_word) >> 5   #combine and shift by 5 to get final 18-bit word
         return combined_word
         
     def position_word(self):
