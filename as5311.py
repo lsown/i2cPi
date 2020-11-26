@@ -10,19 +10,20 @@ class AS5311:
         self.bus = 0    #use default SPI bus 0
         self.device = 0 #use default CS0 pin on Pi
         self.spi.open(self.bus, self.device)
-        self.spi.max_speed_hz = 500000  #lets set the SPI bus to 500kHz
+        self.spi.max_speed_hz = 500000  #lets set the SPI bus to 500kHz, AS5311 can go up to 1MHz comms
         self.spi.mode = 3    #lets set to mode 3 for default reading, note, when we change to magnetic strength sensing, we need to swap to spi mode 0.
 
     def ssi_extraction(self, mode):
         '''SSI comms from the device loses the 1st bit, so its technically 7, 8, 8 relevant bits coming in'''
         self.spi.mode = mode    #Use 2 for position data, use 1 for field strength data
         payload = self.spi.readbytes(3)
-        print('Payload: %s %s %s' %(bin(payload[0]), bin(payload[1]), bin(payload[2])))
+        print('Bit check - Raw Payload: %s %s %s' %(bin(payload[0]), bin(payload[1]), bin(payload[2])))
         beg_word = (payload[0] & 0b01111111) << 16   #mask off bit-7 MSB, then shift in space for 16 bits 
         middle_word = payload[1] << 8    #bit shift word by 8
         end_word = payload[2]  #lose the last 5 bits
-        print('Shifted: %s %s %s' %(bin(beg_word), bin(middle_word), bin(end_word)))
+        print('Bit check - Treated Words: %s %s %s' %(bin(beg_word), bin(middle_word), bin(end_word)))
         combined_word = (beg_word | middle_word | end_word) >> 5   #combine and shift by 5 to get final 18-bit word
+        print('Bit check - Combined Word: %s' %combined_word)
         return combined_word
         
     def position_word(self):
@@ -61,30 +62,38 @@ class AS5311:
         ocf = (0b100 & error_bits) >> 2
         cof = (0b010 & error_bits) >> 1
         linearity = (0b001 & error_bits)
-        error_report = ''
-        if ocf == 0:
-            error_report = 'OCF'
-        if cof == 1:
-            error_report += ', COF'
-        if linearity == 1: 
-            error_report += ', Linearity'
+        error_report = 'Error Flag Raised on:'
+        if ocf == 0:    #LOW indicates offset compensation algorithm did not finish. Data invalid.
+            error_report = ' Offset Compensation NOT finished (OCF)'
+        if cof == 1:    #HIGH indicates cordic overflow. Data invalid.
+            error_report += ' Cordic Overflow (COF)'
+        if linearity == 1:  #HIGH indicates critical output linearity, i.e. field strength / signal outside of compensation regime. Reads are suspect.
+            error_report += ' Linearity Alarm'
         if error_bits == 0b100:
-            error_report += 'No'
-        error_report += ' Error.'
+            error_report += ' None'
         return error_report
 
     def report(self, mode = 3):
         combined_word = self.ssi_extraction(mode = mode)
         databits = combined_word >> 6
-        if mode == 2:
-            print('%s (bin: %s | hex: %s) position - inverted - mode 2' %(databits, bin(databits),hex(databits)))
-        elif mode == 3:
+        if mode == 3:
             print('%s (bin: %s | hex: %s) position - mode 3' %(databits, bin(databits),hex(databits)))
-        elif mode == 1:
-            print('%s (bin: %s | hex: %s) mT field strength inverted - mode 1' %(databits, bin(databits),hex(databits)))
+        elif mode == 2:
+            print('%s (bin: %s | hex: %s) position - inverted - mode 2' %(databits, bin(databits),hex(databits)))
         elif mode == 0:
             print('%s (bin: %s | hex: %s) mT field strength - mode 0' %(databits, bin(databits), hex(databits)))
+        elif mode == 1:
+            print('%s (bin: %s | hex: %s) mT field strength inverted - mode 1' %(databits, bin(databits),hex(databits)))
 
         self.report_zrange(combined_word)   #prints z-range
         print(self.check_errors(combined_word))
-        print('%s binary word' %bin(combined_word))
+        
+
+    def fieldstrength_calculator(self, combined_word):
+        msb_eight = combined_word >> 10
+        if msb_eight == 0x3F:
+            return
+        elif (0x20 < msb_eight < 0x3F) or (0x3F < msb_eight < 0x5F):
+            return
+        else:
+            print('Outside of valid range')
