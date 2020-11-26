@@ -39,11 +39,11 @@ class AS5311:
         return field_strength
 
     def report_zrange(self, combined_word):
-        zrange_lookup = {0b000 : {'state': 'Green - static', 'range': '10..40 mT', 'distance': 'static'},
-                        0b010 : {'state': 'Green - increasing field', 'range': '10..40 mT', 'distance': 'increase'},
-                        0b001 : {'state': 'Green - decreasing field', 'range': '10..40 mT', 'distance': 'decrease'},
-                        0b011 : {'state': 'Yellow - Under / Over mT - reduced accuracy', 'range': '3.4..54.5 mT', 'distance': 'n/a'},
-                        0b111 : {'state': 'Red - ERROR - signficant under / over mT', 'range': 'field < 3.4 mT | > 54.5 mT', 'distance': 'n/a'},
+        zrange_lookup = {0b000 : {'Z-axis Range': 'Green - static', 'range': '10..40 mT', 'distance': 'static'},
+                        0b010 : {'Z-axis Range': 'Green - increasing field', 'range': '10..40 mT', 'distance': 'increase'},
+                        0b001 : {'Z-axis Range': 'Green - decreasing field', 'range': '10..40 mT', 'distance': 'decrease'},
+                        0b011 : {'Z-axis Range': 'Yellow - Under / Over mT - reduced accuracy', 'range': '3.4..54.5 mT', 'distance': 'n/a'},
+                        0b111 : {'Z-axis Range': 'Red - ERROR - signficant under / over mT', 'range': 'field < 3.4 mT | > 54.5 mT', 'distance': 'n/a'},
                         }
         magnetic_bits = (combined_word & 0b1111) >> 1   #mask off last 4 bits and shift off parity bit
         for bits in zrange_lookup:
@@ -93,10 +93,10 @@ class AS5311:
     def fieldstrength_calculator(self, combined_word):
         msb_eight = combined_word >> 10
         if msb_eight == 0x3F:
-            return 'Field between 10-40 mT'
+            return 'Field Strength Range: between 10-40 mT'
         elif (0x20 < msb_eight < 0x3F) or (0x3F < msb_eight < 0x5F):
-            return 'Field between 3.4-10 mT'
+            return 'Field Strength Range: 3.4-10 mT'
         elif (0x3F < msb_eight < 0x5F):
-            return 'Field between 40-54.5 mT'
+            return 'Field Strength Range: 40-54.5 mT'
         else:
-            return 'ERROR: Outside of valid range 3.4 - 54.5 mT. Service stage.'
+            return 'Field Strength Range: ERROR! Outside of 3.4 - 54.5 mT.'
