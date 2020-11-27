@@ -17,6 +17,9 @@ class AS5311:
         self.spi.max_speed_hz = 1000000  #Up to 1 MHz SSI bus speed. ~ 42 Khz for 24-bits max theoretical... but internal sampling of position is restricted to ~10.4 kHz
         self.spi.mode = 3    #lets set to mode 3 for default reading, note, when we change to magnetic strength sensing, we need to swap to spi mode 0.
         self.absolute_position = self.sample_data(samples=16, mode=3)   #Lets sample 16 times at beginning to establish starting position
+        self.current_position = self.absolute_position  #set it to self.absolute_position for now
+        self.last_position = 0   #no prior position known
+        self.current_to_last_position = self.current_position - self.last_position
         print('AS5311 initialized. Starting position is %s.' %self.absolute_position)
         logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.DEBUG, datefmt="%H:%M:%S")
 
@@ -44,12 +47,6 @@ class AS5311:
         #print('%s position' %abs_position)
         sampled_databits = sampled_databits / samples
         return int(sampled_databits)
-
-    def field(self, mode = 0):
-        combined_word = self.ssi_extraction(mode = mode)
-        databits = combined_word >> 6
-        #print('%s field strength' %field_strength)
-        return databits
 
     def check_zrange(self, combined_word):
         zrange_lookup = {0b000 : {'state': 'Green - static', 'range': '10..40 mT', 'distance': 'static'},
@@ -96,21 +93,24 @@ class AS5311:
         else:
             return False    #return false if odd, data is INVALID
 
-    def report(self, mode = 3):
-        combined_word = self.ssi_extraction(mode = mode)
+    def report(self, samples = 1, mode = 3):
+        combined_word = self.ssi_extraction(mode = mode)    #Run an intial sample test for grabbing error codes.
         databits = combined_word >> 6
-        '''Do not use mode 2 or 1, these are just experimental test modes to see what data comes back during development.'''
         if mode == 3:
             print('Position: %s. SPI mode 3 (bin: %s | hex: %s) ' %(databits, bin(databits),hex(databits)))
         elif mode == 0:
             print('Field Strength: %s (0-4096 proportional). SPI mode 0 (bin: %s | hex: %s).' %(databits, bin(databits), hex(databits)))
             print(self.fieldstrength_calculator(combined_word))
+        #Do not use mode 2 or 1, these are just experimental test modes to see what data comes back during development.
+        '''
         elif mode == 2:
             print('Position: %s. SPI mode 2 - invalid data [wrong clock edge] (bin: %s | hex: %s) ' %(databits, bin(databits),hex(databits)))
         elif mode == 1:
             print('Field Strength: %s (0-4096 proportional). SPI mode 1 - invalid data [wrong clock edge] (bin: %s | hex: %s) ' %(databits, bin(databits),hex(databits)))
             print(self.fieldstrength_calculator(combined_word))
-        #self.report_zrange(combined_word)   #prints z-range info
+        '''
+        #Run validity check on the first sampled value
+        print('!-ALERT-! Currently only running validity check only on 1st sample (below, not "n" samples.')
         print(self.check_zrange(combined_word))
         print(self.check_errors(combined_word)) #prints error bit checks
         print('Even Parity Check: %s' %self.check_parity(combined_word))
@@ -126,17 +126,28 @@ class AS5311:
         else:
             return 'Field Strength Range: ERROR! Outside of 3.4 - 54.5 mT, data inaccurate.'
 
-    def position_calculator(self, digital_position, units = 'nm'):
-        position = ((digital_position + 1) / 4096) * 2    #4096 steps / 2mm
-        if units == 'um':
-            position = position * 1e6
-            return position
+    def bit_to_metric_convert(self, bit_position, units = 'um'):
+        '''Converts digital position to a unit position within a 2 mm pole'''
+        metric_position = ((bit_position + 1) / 4096) * 2    #4096 steps / 2mm
+        if units == 'mm':
+            pass
+        elif units == 'um':
+            metric_position = metric_position * 1e3
         elif units == 'nm':
-            position = position * 1e9
-            return position
-        elif units == 'mm':
-            position = position * 1e3
+            metric_position = metric_position * 1e6
+        return metric_position
+
+    def get_position(self, samples = 1, display = 'metric', units = 'um'):
+        self.last_position = self.current_position
+        self.current_position = self.sample_data(samples = samples)
+        self.current_to_last_position = self.current_position - self.last_position
+        last_position_metric = self.bit_to_metric_convert(bit_position = self.last_position, units = units)
+        current_position_metric = self.bit_to_metric_convert(bit_position = self.current_position, units = units)
+        current_to_last_position_metric = self.bit_to_metric_convert(bit_position = self.current_to_last_position, units = units)
+        print('Last position: %s (%s %s)' %(self.last_position, last_position_metric, units))
+        print('Current position: %s (%s %s)' %(self.current_position, current_position_metric, units))
+        print('Current - Last position: %s (%s %s)' %(self.current_to_last_position, current_to_last_position_metric, units))
 
     def calibrate_zero(self):
+        '''Calibrate instance's absolute position'''
         self.absolute_position = 0
-
