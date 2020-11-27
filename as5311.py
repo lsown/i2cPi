@@ -58,7 +58,7 @@ class AS5311:
         while combined_word != 0:
             check_for_1 = 0b1 & combined_word   #mask
             parity_counter += check_for_1
-            combined_word >> 1
+            combined_word = combined_word >> 1
         if parity_counter % 2 == 0:
             return True
         else:
