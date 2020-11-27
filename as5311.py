@@ -16,7 +16,7 @@ class AS5311:
         self.spi.open(self.bus, self.device)
         self.spi.max_speed_hz = 1000000  #Up to 1 MHz SSI bus speed. ~ 42 Khz for 24-bits max theoretical... but internal sampling of position is restricted to ~10.4 kHz
         self.spi.mode = 3    #lets set to mode 3 for default reading, note, when we change to magnetic strength sensing, we need to swap to spi mode 0.
-        self.absolute_position = self.position(16, 3)   #Lets sample 16 times at beginning to establish starting position
+        self.absolute_position = self.sample_data(samples=16, mode=3)   #Lets sample 16 times at beginning to establish starting position
         print('AS5311 initialized. Starting position is %s.' %self.absolute_position)
         logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.DEBUG, datefmt="%H:%M:%S")
 
