@@ -54,8 +54,15 @@ class AS5311:
 
     def parity_check(self, combined_word):
         '''Incomplete'''
-        parity_bit = combined_word & 0b1    #mask
-        return
+        parity_counter = 0
+        while combined_word != 0:
+            check_for_1 = 0b1 & combined_word   #mask
+            parity_counter += check_for_1
+            combined_word >> 1
+        if parity_counter % 2 == 0:
+            return True
+        else:
+            return False
 
     def check_errors(self, combined_word):
         error_bits = (0b111111 & combined_word) >> 3    #grab last 6 bits, move 3 off
