@@ -129,13 +129,13 @@ class AS5311:
     def position_calculator(self, digital_position, units = 'nm'):
         position = ((digital_position + 1) / 4096) * 2    #4096 steps / 2mm
         if units == 'um':
-            position = position / 1e6
+            position = position * 1e6
             return position
         elif units == 'nm':
-            position = position / 1e9
+            position = position * 1e9
             return position
         elif units == 'mm':
-            position = position / 1e3
+            position = position * 1e3
 
     def calibrate_zero(self):
         self.absolute_position = 0
