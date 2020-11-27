@@ -96,7 +96,7 @@ class AS5311:
             print(self.fieldstrength_calculator(combined_word))
         self.report_zrange(combined_word)   #prints z-range info
         print(self.check_errors(combined_word)) #prints error bit checks
-        print('Even Parity Check: %s' %self.check_errors(combined_word))
+        print('Even Parity Check: %s' %self.check_parity(combined_word))
 
     def fieldstrength_calculator(self, combined_word):
         msb_eight = combined_word >> 10
