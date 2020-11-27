@@ -1,43 +1,46 @@
-import spidev
-
-#x = bin((spi.readbytes(3)[0] << 4))
-#((spi.readbytes(3)[0] & 0b01111111) << 5) | (spi.readbytes(3)[1] >> 5)
-#pullBits = ((payload[0] & 0b01111111) << 5) | (payload[1] >> 5)
+try:
+    import spidev
+except ModuleNotFoundError:
+    print('AS5311 requires spidev library first before use!')
 
 class AS5311:
-    '''Class for talking to AS5311 chip. Commuicates via SSI, which is a modified version of SPI where we cut off first bit, and use the next 18-bits... but requires the standard 24-bit transaction. Uses SPI mode 3 for reading position, SPI mode 0 for reading magnetic field propotional strength.'''
+    '''Class for talking to AS5311 chip. Commuicates via SSI, which is a modified version of SPI where we cut off first bit, and use the next 18-bits... but requires the standard 24-bit transaction. Uses SPI mode 3 for reading position, SPI mode 0 for reading magnetic field propotional strength. Physical requirements is a 1 mm pole for total distance 2 mm. Field strength requirements within 10-40 mT. 500 nm resolution.'''
     def __init__(self):
         self.spi = spidev.SpiDev()
         self.bus = 0    #use default SPI bus 0
         self.device = 0 #use default CS0 pin on Pi
         self.spi.open(self.bus, self.device)
-        self.spi.max_speed_hz = 1000000  #lets set the SPI bus to 500kHz, AS5311 can go up to 1MHz comms
+        self.spi.max_speed_hz = 1000000  #Up to 1 MHz SSI bus speed. ~ 42 Khz for 24-bits max theoretical... but internal sampling of position is restricted to ~10.4 kHz
         self.spi.mode = 3    #lets set to mode 3 for default reading, note, when we change to magnetic strength sensing, we need to swap to spi mode 0.
 
     def ssi_extraction(self, mode):
         '''SSI comms from the device loses the 1st bit, so its technically 7, 8, 8 relevant bits coming in'''
         self.spi.mode = mode    #Use 2 for position data, use 1 for field strength data
         payload = self.spi.readbytes(3)
-        print('Bit check - Raw Payload: %s %s %s' %(bin(payload[0]), bin(payload[1]), bin(payload[2])))
+        #print('Bit check - Raw Payload: %s %s %s' %(bin(payload[0]), bin(payload[1]), bin(payload[2])))
         beg_word = (payload[0] & 0b01111111) << 16   #mask off bit-7 MSB, then shift in space for 16 bits 
         middle_word = payload[1] << 8    #bit shift word by 8
         end_word = payload[2]  #lose the last 5 bits
-        print('Bit check - Treated Words: %s %s %s' %(bin(beg_word), bin(middle_word), bin(end_word)))
+        #print('Bit check - Treated Words: %s %s %s' %(bin(beg_word), bin(middle_word), bin(end_word)))
         combined_word = (beg_word | middle_word | end_word) >> 5   #combine and shift by 5 to get final 18-bit word
         print('Bit check - Combined Word: %s' %bin(combined_word))
         return combined_word
         
-    def position_word(self):
-        combined_word = self.ssi_extraction(mode = 2)
-        abs_position = combined_word >> 6
-        #print('%s absolute position' %abs_position)
-        return abs_position
+    def position(self, samples = 1, mode = 3):
+        samples = samples
+        sampled_databits = 0
+        while samples != 0:
+            combined_word = self.ssi_extraction(mode = mode)
+            sampled_databits += (combined_word >> 6)
+            samples -= 1
+        #print('%s position' %abs_position)
+        return sampled_databits
 
-    def magnetic_word(self):
-        combined_word = self.ssi_extraction(mode = 1)
-        field_strength = combined_word >> 6
-        #print('%s mT field strength' %field_strength)
-        return field_strength
+    def field(self, mode = 0):
+        combined_word = self.ssi_extraction(mode = mode)
+        databits = combined_word >> 6
+        #print('%s field strength' %field_strength)
+        return databits
 
     def check_zrange(self, combined_word):
         zrange_lookup = {0b000 : {'state': 'Green - static', 'range': '10..40 mT', 'distance': 'static'},
@@ -55,19 +58,8 @@ class AS5311:
                 z_report = z_report[:-2]    #remove extra , 
             return z_report #EXIT OUT OF LOOP
 
-    def check_parity(self, combined_word):
-        '''Incomplete'''
-        parity_counter = 0
-        while combined_word != 0:
-            check_for_1 = 0b1 & combined_word   #mask
-            parity_counter += check_for_1
-            combined_word = combined_word >> 1  #bit-shift off last bit, run loop again.
-        if parity_counter % 2 == 0: #check if its even
-            return True #return true if even, data is VALID
-        else:
-            return False    #return false if odd, data is INVALID
-
     def check_errors(self, combined_word):
+        '''Interprets bits[5:3], these are error flags and returns interpretation to user.'''
         error_bits = (0b111111 & combined_word) >> 3    #grab last 6 bits, move 3 off
         ocf = (0b100 & error_bits) >> 2
         cof = (0b010 & error_bits) >> 1
@@ -82,6 +74,18 @@ class AS5311:
         if error_bits == 0b100:
             error_report += ' None'
         return error_report
+
+    def check_parity(self, combined_word):
+        '''Brute force method of checking data validity. Total # of bits in 18-bit stream should be even.'''
+        parity_counter = 0
+        while combined_word != 0:
+            check_for_1 = 0b1 & combined_word   #mask
+            parity_counter += check_for_1
+            combined_word = combined_word >> 1  #bit-shift off last bit, run loop again.
+        if parity_counter % 2 == 0: #check if its even
+            return True #return true if even, data is VALID
+        else:
+            return False    #return false if odd, data is INVALID
 
     def report(self, mode = 3):
         combined_word = self.ssi_extraction(mode = mode)
