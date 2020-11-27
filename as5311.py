@@ -38,7 +38,7 @@ class AS5311:
         #print('%s mT field strength' %field_strength)
         return field_strength
 
-    def report_zrange(self, combined_word):
+    def check_zrange(self, combined_word):
         zrange_lookup = {0b000 : {'state': 'Green - static', 'range': '10..40 mT', 'distance': 'static'},
                         0b010 : {'state': 'Green - increasing field', 'range': '10..40 mT', 'distance': 'increase'},
                         0b001 : {'state': 'Green - decreasing field', 'range': '10..40 mT', 'distance': 'decrease'},
@@ -46,11 +46,13 @@ class AS5311:
                         0b111 : {'state': 'Red - ERROR - signficant under / over mT', 'range': 'field < 3.4 mT | > 54.5 mT', 'distance': 'n/a'},
                         }
         magnetic_bits = (combined_word & 0b1111) >> 1   #mask off last 4 bits and shift off parity bit
+        z_report = ('Z-axis range indicator - ')
         for bits in zrange_lookup:
             if magnetic_bits == bits:
                 for items in zrange_lookup[bits]:
-                    print('Z-axis range indicator %s : %s.' %(items, zrange_lookup[bits][items]))
-                return  #EXIT OUT OF LOOP
+                    z_report += ('%s : %s, ' %(items, zrange_lookup[bits][items]))
+                z_report = z_report[:-2]    #remove extra , 
+            return z_report #EXIT OUT OF LOOP
 
     def check_parity(self, combined_word):
         '''Incomplete'''
@@ -58,11 +60,11 @@ class AS5311:
         while combined_word != 0:
             check_for_1 = 0b1 & combined_word   #mask
             parity_counter += check_for_1
-            combined_word = combined_word >> 1
-        if parity_counter % 2 == 0:
-            return True
+            combined_word = combined_word >> 1  #bit-shift off last bit, run loop again.
+        if parity_counter % 2 == 0: #check if its even
+            return True #return true if even
         else:
-            return False
+            return False    #return false if odd
 
     def check_errors(self, combined_word):
         error_bits = (0b111111 & combined_word) >> 3    #grab last 6 bits, move 3 off
@@ -94,7 +96,8 @@ class AS5311:
         elif mode == 1:
             print('Field Strength: %s (0-4096 proportional). SPI mode 1 - invalid data [wrong clock edge] (bin: %s | hex: %s) ' %(databits, bin(databits),hex(databits)))
             print(self.fieldstrength_calculator(combined_word))
-        self.report_zrange(combined_word)   #prints z-range info
+        #self.report_zrange(combined_word)   #prints z-range info
+        print(self.check_zrange(combined_word))
         print(self.check_errors(combined_word)) #prints error bit checks
         print('Even Parity Check: %s' %self.check_parity(combined_word))
 
