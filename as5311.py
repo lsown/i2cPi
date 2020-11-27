@@ -52,7 +52,7 @@ class AS5311:
                     print('Z-axis range indicator %s : %s.' %(items, zrange_lookup[bits][items]))
                 return  #EXIT OUT OF LOOP
 
-    def parity_check(self, combined_word):
+    def check_parity(self, combined_word):
         '''Incomplete'''
         parity_counter = 0
         while combined_word != 0:
@@ -96,6 +96,7 @@ class AS5311:
             print(self.fieldstrength_calculator(combined_word))
         self.report_zrange(combined_word)   #prints z-range info
         print(self.check_errors(combined_word)) #prints error bit checks
+        print('Even Parity Check: %s' %self.check_errors(combined_word))
 
     def fieldstrength_calculator(self, combined_word):
         msb_eight = combined_word >> 10
