@@ -29,7 +29,7 @@ class AS5311:
     def position(self, samples = 1, mode = 3):
         sample_count = samples
         sampled_databits = 0
-        while samples != 0:
+        while sample_count != 0:
             combined_word = self.ssi_extraction(mode = mode)
             sampled_databits += (combined_word >> 6)
             sample_count -= 1
