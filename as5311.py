@@ -5,12 +5,13 @@ import spidev
 #pullBits = ((payload[0] & 0b01111111) << 5) | (payload[1] >> 5)
 
 class AS5311:
+    '''Class for talking to AS5311 chip. Commuicates via SSI, which is a modified version of SPI where we cut off first bit, and use the next 18-bits... but requires the standard 24-bit transaction. Uses SPI mode 3 for reading position, SPI mode 0 for reading magnetic field propotional strength.'''
     def __init__(self):
         self.spi = spidev.SpiDev()
         self.bus = 0    #use default SPI bus 0
         self.device = 0 #use default CS0 pin on Pi
         self.spi.open(self.bus, self.device)
-        self.spi.max_speed_hz = 500000  #lets set the SPI bus to 500kHz, AS5311 can go up to 1MHz comms
+        self.spi.max_speed_hz = 1000000  #lets set the SPI bus to 500kHz, AS5311 can go up to 1MHz comms
         self.spi.mode = 3    #lets set to mode 3 for default reading, note, when we change to magnetic strength sensing, we need to swap to spi mode 0.
 
     def ssi_extraction(self, mode):
@@ -62,9 +63,9 @@ class AS5311:
             parity_counter += check_for_1
             combined_word = combined_word >> 1  #bit-shift off last bit, run loop again.
         if parity_counter % 2 == 0: #check if its even
-            return True #return true if even
+            return True #return true if even, data is VALID
         else:
-            return False    #return false if odd
+            return False    #return false if odd, data is INVALID
 
     def check_errors(self, combined_word):
         error_bits = (0b111111 & combined_word) >> 3    #grab last 6 bits, move 3 off
