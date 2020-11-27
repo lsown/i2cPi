@@ -3,6 +3,10 @@ try:
 except ModuleNotFoundError:
     print('AS5311 requires spidev library first before use!')
 
+import logging
+import time
+
+
 class AS5311:
     '''Class for talking to AS5311 chip. Commuicates via SSI, which is a modified version of SPI where we cut off first bit, and use the next 18-bits... but requires the standard 24-bit transaction. Uses SPI mode 3 for reading position, SPI mode 0 for reading magnetic field propotional strength. Physical requirements is a 1 mm pole for total distance 2 mm. Field strength requirements within 10-40 mT. 500 nm resolution.'''
     def __init__(self):
@@ -12,6 +16,8 @@ class AS5311:
         self.spi.open(self.bus, self.device)
         self.spi.max_speed_hz = 1000000  #Up to 1 MHz SSI bus speed. ~ 42 Khz for 24-bits max theoretical... but internal sampling of position is restricted to ~10.4 kHz
         self.spi.mode = 3    #lets set to mode 3 for default reading, note, when we change to magnetic strength sensing, we need to swap to spi mode 0.
+        logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.DEBUG, datefmt="%H:%M:%S")
+
 
     def ssi_extraction(self, mode):
         '''SSI comms from the device loses the 1st bit, so its technically 7, 8, 8 relevant bits coming in'''
@@ -23,7 +29,7 @@ class AS5311:
         end_word = payload[2]  #lose the last 5 bits
         #print('Bit check - Treated Words: %s %s %s' %(bin(beg_word), bin(middle_word), bin(end_word)))
         combined_word = (beg_word | middle_word | end_word) >> 5   #combine and shift by 5 to get final 18-bit word
-        print('Bit check - Combined Word: %s' %bin(combined_word))
+        logging.info('Bit check - Combined Word: %s' %bin(combined_word))
         return combined_word
         
     def position(self, samples = 1, mode = 3):
