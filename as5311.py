@@ -16,6 +16,8 @@ class AS5311:
         self.spi.open(self.bus, self.device)
         self.spi.max_speed_hz = 1000000  #Up to 1 MHz SSI bus speed. ~ 42 Khz for 24-bits max theoretical... but internal sampling of position is restricted to ~10.4 kHz
         self.spi.mode = 3    #lets set to mode 3 for default reading, note, when we change to magnetic strength sensing, we need to swap to spi mode 0.
+        self.absolute_position = self.position(16, 3)   #Lets sample 16 times at beginning to establish starting position
+        print('AS5311 initialized. Starting position is %s.' %self.absolute_position)
         logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.DEBUG, datefmt="%H:%M:%S")
 
 
@@ -32,7 +34,7 @@ class AS5311:
         logging.info('Bit check - Combined Word: %s' %bin(combined_word))
         return combined_word
         
-    def position(self, samples = 1, mode = 3):
+    def sample_data(self, samples = 1, mode = 3):
         sample_count = samples
         sampled_databits = 0
         while sample_count != 0:
@@ -41,7 +43,7 @@ class AS5311:
             sample_count -= 1
         #print('%s position' %abs_position)
         sampled_databits = sampled_databits / samples
-        return sampled_databits
+        return int(sampled_databits)
 
     def field(self, mode = 0):
         combined_word = self.ssi_extraction(mode = mode)
@@ -123,3 +125,18 @@ class AS5311:
             return 'Field Strength Range: 40-54.5 mT, too strong but usable with inaccuracies.'
         else:
             return 'Field Strength Range: ERROR! Outside of 3.4 - 54.5 mT, data inaccurate.'
+
+    def position_calculator(self, digital_position, units = 'nm'):
+        position = ((digital_position + 1) / 4096) * 2    #4096 steps / 2mm
+        if units == 'um':
+            position = position / 1e6
+            return position
+        elif units == 'nm':
+            position = position / 1e9
+            return position
+        elif units == 'mm':
+            position = position / 1e3
+
+    def calibrate_zero(self):
+        self.absolute_position = 0
+
