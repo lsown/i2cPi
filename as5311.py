@@ -128,7 +128,7 @@ class AS5311:
 
     def bit_to_metric_convert(self, bit_position, units = 'um'):
         '''Converts digital position to a unit position within a 2 mm pole'''
-        metric_position = ((bit_position + 1) / 4096) * 2    #4096 steps / 2mm
+        metric_position = ((bit_position) / 4096) * 2    #4096 steps / 2mm
         if units == 'mm':
             pass
         elif units == 'um':
