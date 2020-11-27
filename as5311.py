@@ -27,13 +27,14 @@ class AS5311:
         return combined_word
         
     def position(self, samples = 1, mode = 3):
-        samples = samples
+        sample_count = samples
         sampled_databits = 0
         while samples != 0:
             combined_word = self.ssi_extraction(mode = mode)
             sampled_databits += (combined_word >> 6)
-            samples -= 1
+            sample_count -= 1
         #print('%s position' %abs_position)
+        sampled_databits = sampled_databits / samples
         return sampled_databits
 
     def field(self, mode = 0):
