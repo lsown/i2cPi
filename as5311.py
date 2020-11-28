@@ -38,6 +38,7 @@ class AS5311:
         return combined_word
         
     def sample_data(self, samples = 1, mode = 3):
+        '''Recommended sampling is 4 - 16 as a means of digital filtering against jitter when magnet is staionary over IC. 4x samples reduces to 50% (6dB), 16x samples reduces to 25%.'''
         sample_count = samples
         sampled_databits = 0
         while sample_count != 0:
@@ -61,8 +62,8 @@ class AS5311:
             if magnetic_bits == bits:
                 for items in zrange_lookup[bits]:
                     z_report += ('%s : %s, ' %(items, zrange_lookup[bits][items]))
-                z_report = z_report[:-2]    #remove extra , 
-            return z_report #EXIT OUT OF LOOP
+                z_report = z_report[:-2]    #remove extra ', ' from end of loop 
+            return z_report 
 
     def check_errors(self, combined_word):
         '''Interprets bits[5:3], these are error flags and returns interpretation to user.'''
@@ -93,7 +94,7 @@ class AS5311:
         else:
             return False    #return false if odd, data is INVALID
 
-    def report(self, samples = 1, mode = 3):
+    def report(self, mode = 3):
         combined_word = self.ssi_extraction(mode = mode)    #Run an intial sample test for grabbing error codes.
         databits = combined_word >> 6
         if mode == 3:
@@ -110,7 +111,29 @@ class AS5311:
             print(self.fieldstrength_calculator(combined_word))
         '''
         #Run validity check on the first sampled value
-        print('!-ALERT-! Currently only running validity check only on 1st sample (below, not "n" samples.')
+        print('INFO - Currently only running validity check only on 1st sample (below, not "n" samples.)')
+        print(self.check_zrange(combined_word))
+        print(self.check_errors(combined_word)) #prints error bit checks
+        print('Even Parity Check: %s' %self.check_parity(combined_word))
+
+    def report_new(self, samples = 1, mode = 3):
+        combined_word = self.ssi_extraction(mode = mode)    #Run an intial sample test for grabbing error codes.
+        databits = combined_word >> 6
+        if mode == 3:
+            print('Position: %s. SPI mode 3 (bin: %s | hex: %s) ' %(databits, bin(databits),hex(databits)))
+        elif mode == 0:
+            print('Field Strength: %s (0-4096 proportional). SPI mode 0 (bin: %s | hex: %s).' %(databits, bin(databits), hex(databits)))
+            print(self.fieldstrength_calculator(combined_word))
+        #Do not use mode 2 or 1, these are just experimental test modes to see what data comes back during development.
+        '''
+        elif mode == 2:
+            print('Position: %s. SPI mode 2 - invalid data [wrong clock edge] (bin: %s | hex: %s) ' %(databits, bin(databits),hex(databits)))
+        elif mode == 1:
+            print('Field Strength: %s (0-4096 proportional). SPI mode 1 - invalid data [wrong clock edge] (bin: %s | hex: %s) ' %(databits, bin(databits),hex(databits)))
+            print(self.fieldstrength_calculator(combined_word))
+        '''
+        #Run validity check on the first sampled value
+        print('INFO - Currently only running validity check only on 1st sample (below, not "n" samples.)')
         print(self.check_zrange(combined_word))
         print(self.check_errors(combined_word)) #prints error bit checks
         print('Even Parity Check: %s' %self.check_parity(combined_word))
@@ -129,10 +152,10 @@ class AS5311:
     def bit_to_metric_convert(self, bit_position, units = 'um'):
         '''Converts digital position to a unit position within a 2 mm pole'''
         metric_position = ((bit_position) / 4096) * 2    #4096 steps / 2mm
-        if units == 'mm':
-            pass
-        elif units == 'um':
+        if units == 'um':
             metric_position = metric_position * 1e3
+        elif units == 'mm':
+            pass
         elif units == 'nm':
             metric_position = metric_position * 1e6
         return metric_position
@@ -141,9 +164,10 @@ class AS5311:
         self.last_position = self.current_position
         self.current_position = self.sample_data(samples = samples)
         self.current_to_last_position = self.current_position - self.last_position
-        last_position_metric = self.bit_to_metric_convert(bit_position = self.last_position, units = units)
-        current_position_metric = self.bit_to_metric_convert(bit_position = self.current_position, units = units)
-        current_to_last_position_metric = self.bit_to_metric_convert(bit_position = self.current_to_last_position, units = units)
+        last_position_metric = round(self.bit_to_metric_convert(bit_position = self.last_position, units = units), 3)
+        current_position_metric = round(self.bit_to_metric_convert(bit_position = self.current_position, units = units), 3)
+        current_to_last_position_metric = round(self.bit_to_metric_convert(bit_position = self.current_to_last_position, units = units), 3)
+
         print('Last position: %s (%s %s)' %(self.last_position, last_position_metric, units))
         print('Current position: %s (%s %s)' %(self.current_position, current_position_metric, units))
         print('Current - Last position: %s (%s %s)' %(self.current_to_last_position, current_to_last_position_metric, units))
