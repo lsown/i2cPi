@@ -14,8 +14,8 @@ import adafruit_ssd1306
 #threading
 import threading
 
-
-
+#decorator
+from functools import wraps
 
 class OledDisplay:
     def __init__(self, i2cAddress=0x3c):
@@ -96,6 +96,11 @@ class OledDisplay:
         elif position =='bottom':
             self.drawObj.text((self.oled.width//2 - font_width//2, self.oled.height//2 + 3), text, font=self.font, fill=255)
 
+    def drawCheckText(self, text, xCheck=2, yCheck=2, xText=18, yText=2):
+        '''Draws check box size of 11 + 5 pxl spacers + WORD'''
+        self.drawObj.rectangle([(xCheck,yCheck), (xCheck+11,yCheck+11)], fill=0, width=1)
+        self.drawObj.text([(18, 2)], text=text, fill=1)
+
     def drawWifi(self, x=0, y=2, status='ok'):
         '''Draws wifi symbol. If status error, cuts it out and adds exclamation point.'''
         '''x,y positioned @ (3,2) centers in a 0x16 box, add (16,16) to (3,2).'''
@@ -162,7 +167,7 @@ class OledDisplay:
 class OledButtons:
     def __init__(self):
         logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.DEBUG)
-        self.address = 0x49
+        self.i2cAddress = 0x49  #pca9537 address, hard-coded
         self.input_register_pointer = 0x00  #Expected State: 0b11110011
         self.output_register_pointer = 0x01 #Expected State: 0b11111111
         self.polarityinv_register_pointer = 0x02    #Expected State: 0b11111111
@@ -174,31 +179,42 @@ class OledButtons:
     def read_input_register(self):
         '''Because we are using POGOS, we can occasionally get a momentary disconnect when we are pushing on the buttons. To prevent this, we need to (1) catch this exception - OSError & (2) try a refresh, say 2-3 times.'''
         try:
-            input_register_value = self.bus.read_byte_data(self.address, self.input_register_pointer)
+            input_register_value = self.bus.read_byte_data(self.i2cAddress, self.input_register_pointer)
             logging.info('queryButton: Input register read value is %s.' %bin(input_register_value))
             # time.sleep(0.1) #Lets give a small timeout and then re-read register to cleanup and pull ALERT back up in case it failed to go back up. 
             logging.info('queryButton: Clean-up register - just in case ALERT is pulled low. Value read is %s' %bin(self.bus.read_byte_data(0x49, 0x00)))            
-            time.sleep(0.25) #lets add a delay for a button push, then re-read down there
-            input_register_value = self.bus.read_byte_data(self.address, self.input_register_pointer)   #Re-read to see state & also to clean-up register
+            time.sleep(0.3) #lets add a delay for a button push, then re-read down there
+            input_register_value = self.bus.read_byte_data(self.i2cAddress, self.input_register_pointer)   #Re-read to see state & also to clean-up register
             return input_register_value
             #global exit_loop
             #exit_loop = True
         except OSError:
             logging.info('<!---EXCEPTION--!>Remote - OSError... wait 100 mS and re-initialize a trial read.')
             time.sleep(0.1)
-            self.bus.read_byte_data(self.address, self.input_register_pointer)  #read register just in case to reset INT
+            self.bus.read_byte_data(self.i2cAddress, self.input_register_pointer)  #read register just in case to reset INT
+
+class VoxaDisplayError(Exception):
+    pass
+
+def _i2c_comms_err(f):
+    @wraps(f)
+    def wrapper(self, *args, **kwargs):
+        if self.oled == None:
+            raise VoxaDisplayError("VoxaDisplay Comms Down.")
+        try:
+            return f(self, *args, **kwargs)
+        except (IOError, OSError, ValueError) as e:
+            raise VoxaDisplayError("VoxaDisplay I2C error: %s" % str(e))
+    return wrapper
 
 class VoxaDisplay:
     def __init__(self, interruptPin = 22):
         logging.basicConfig(format="%(asctime)s: %(message)s", level=logging.DEBUG)
+        self.oled = None
         self.oledText = ["",""] #holder for text
         self.oledTestResponse = None
         self.interruptPin = interruptPin    #BCM GPIO pin # on RPi, default on MCU's is 22
-        try:
-            self.oled = OledDisplay()       #create instance of display
-            self.buttons = OledButtons()    #create instance of buttons
-        except IOError:
-            logging.info('Failed to bringup OledDisplay or OLEDButton - IO Error')
+
         try:
             GPIO.add_event_detect(self.interruptPin, GPIO.FALLING, 
             callback=self.buttonPress, 
@@ -207,6 +223,16 @@ class VoxaDisplay:
         except:
             logging.info('!-ERROR-! Failed to add event detection on pin %s with callback to .buttonPress' %self.interruptPin)
         self.monitorThread()    #start auto-monitoring thread in case a latch-state occurs on the INT pin.
+
+    def open(self):
+        try:
+            self.oled = OledDisplay()       #create instance of display
+            self.buttons = OledButtons()    #create instance of buttons
+        except (IOError, OSError, ValueError) as e:
+            raise VoxaDisplayError("OLED Display I2C error: %s" % str(e))
+
+    def close(self):
+        self.oled = None
 
     def buttonPress(self, channel):
         logging.info('<!-------------Button INTERRUPT Detected-------------!>')
