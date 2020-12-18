@@ -98,7 +98,7 @@ class OledDisplay:
 
     def drawCheckText(self, text, xCheck=2, yCheck=2, xText=18, yText=2):
         '''Draws check box size of 11 + 5 pxl spacers + WORD'''
-        self.drawObj.rectangle([(xCheck,yCheck), (xCheck+11,yCheck+11)], fill=0, width=1)
+        self.drawObj.rectangle([(xCheck,yCheck), (xCheck+11, yCheck+11)], fill=0, outline=1, width = 1)
         self.drawObj.text([(18, 2)], text=text, fill=1)
 
     def drawWifi(self, x=0, y=2, status='ok'):
