@@ -105,7 +105,7 @@ class OledDisplay:
             xText += 42
         elif column == 3:
             xCheck += 84
-            xText += 42
+            xText += 84
         if row == 1:
             pass
         elif row == 2:
@@ -113,6 +113,14 @@ class OledDisplay:
             yText += 16
         self.drawObj.rectangle([(xCheck,yCheck), (xCheck+11, yCheck+11)], fill=0, outline=1, width = 1)
         self.drawObj.text([(xText, yText)], text=text, fill=1)
+
+    def drawMochiiState(self):
+        self.drawCheckText('SYS', 1, 1)
+        self.drawCheckText('IMG', 2, 1)
+        self.drawCheckText('FIL', 3, 1)
+        self.drawCheckText('TMP', 1, 2)
+        self.drawCheckText('EDS', 2, 2)
+        self.drawCheckText('WD', 3, 2)
 
     def drawWifi(self, x=0, y=2, status='ok'):
         '''Draws wifi symbol. If status error, cuts it out and adds exclamation point.'''
