@@ -98,17 +98,17 @@ class OledDisplay:
 
     def drawCheckText(self, text, column = 1, row = 1, xCheck=2, yCheck=2, xText=18, yText=2):
         '''Draws check box size of 11 + 5 pxl spacers + WORD'''
-        if column === 1:
+        if column == 1:
             pass
-        else if column === 2:
+        elif column == 2:
             xCheck += 42
             xText += 42
-        else if column === 3:
+        elif column == 3:
             xCheck += 84
             xText += 42
-        if row === 1:
+        if row == 1:
             pass
-        else if row === 2:
+        elif row == 2:
             yCheck += 16
             yText += 16
         self.drawObj.rectangle([(xCheck,yCheck), (xCheck+11, yCheck+11)], fill=0, outline=1, width = 1)
