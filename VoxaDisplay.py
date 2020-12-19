@@ -189,7 +189,7 @@ class OledDisplay:
         '''Default offset to fit into a 16 x 16 pixel'''
         if status == 'error' or status =='ok':
             self.drawObj.rectangle([(x+1,y+1), (x+14, y+13)], 0, 0, 1)  #black out area 
-            self.drawObj.rectangle([(x+1,y+1), (x+14, x+14)], 0, 1, 1) #draw outer rectangle
+            self.drawObj.rectangle([(x+1,y+1), (x+14, y+14)], 0, 1, 1) #draw outer rectangle
             self.drawObj.polygon([(x+3,y+3), (x+3,y+10), (x+5,y+10), (x+5,y+12), (x+10,y+12), (x+10,y+10), (x+12,y+10), (x+12,y+3)], 0, 1)  #draw inside
             #self.drawObj.polygon([(3,3), (3,10), (5,10), (5,12), (10,12), (10,10), (12,10), (12,3)], 0, 1)  #draw inside
 
