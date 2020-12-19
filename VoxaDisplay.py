@@ -145,7 +145,26 @@ class OledDisplay:
             else:
                 self.drawObj.line([(5,9), (10,9)], 1,1)
 
-    def drawWifi(self, x=0, y=2, status='ok'):
+    def drawWifi(self, x=0, y=0, status='ok'):
+        '''Draws wifi symbol. If status error, cuts it out and adds exclamation point.'''
+        '''x,y positioned @ (3,2) centers in a 0x16 box, add (16,16) to (3,2).'''
+        if status == 'error' or status =='ok':
+            self.drawObj.rectangle([(x,y+2), (x+12, y+14)], 0, 0, 1)  #black out area and inside
+            #wifi symbol
+            self.drawObj.arc([(x, y+2), (16+x, y+10)], 200, 340, 1, 1)    #top arc
+            self.drawObj.arc([(x, y+6), (16+x, y+18)], 230, 310, 1, 1)   #mid arc
+            self.drawObj.line([(x+6,y+10), (x+10,y+10)],1,1)  #bottom arc
+            self.drawObj.line([(x+7,y+11), (x+9,y+11)],1,1)   #bottom arc
+        else:
+            logging.info('drawWiFi: invalid status parameter - status must be "ok" or "error".')
+            return
+        if status == 'error':
+            self.drawObj.line([(x+5, y+2), (x+5, y+10)], 0, 2) #cut left side
+            self.drawObj.line([(x+10, y+2), (x+10, y+10)], 0,2)    #cut right side
+            self.drawObj.line([(x+8, y+2), (x+8, y+7)], 1, 3)   #draw straight line for exclamation point
+        logging.info('Wifi status icon "%s" drawn.' %status)
+
+    '''def drawWifi(self, x=0, y=2, status='ok'):
         '''Draws wifi symbol. If status error, cuts it out and adds exclamation point.'''
         '''x,y positioned @ (3,2) centers in a 0x16 box, add (16,16) to (3,2).'''
         if status == 'error' or status =='ok':
@@ -162,7 +181,7 @@ class OledDisplay:
             self.drawObj.line([(x+5, y), (x+5, y+8)], 0, 2) #cut left side
             self.drawObj.line([(x+10, y), (x+10, y+8)], 0,2)    #cut right side
             self.drawObj.line([(x+8, y), (x+8, y+5)], 1, 3)   #draw straight line for exclamation point
-        logging.info('Wifi status icon "%s" drawn.' %status)
+        logging.info('Wifi status icon "%s" drawn.' %status)'''
 
     def drawBluetooth(self, x=0, y=0, status='ok'):
         '''Default offset to fit into a 16 x 16 pixel'''
