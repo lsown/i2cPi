@@ -220,9 +220,9 @@ class OledDisplay:
             logging.info('drawEthernet: invalid status parameter - status must be "ok" or "error".')
             return
         if status == 'error':
-            self.drawObj.line([(x+6,y), (x+6,y+13)], 0, 4)    #excavate interior
-            self.drawObj.line([(x+6,y), (x+6,y+9)], 1, 2)    #print long line
-            self.drawObj.line([(x+6,y+11), (x+6,y+13)], 1, 2)   #print exclamation
+            self.drawObj.line([(x+7,y+1), (x+7,y+14)], 0, 4)    #excavate interior
+            self.drawObj.line([(x+7,y+1), (x+7,y+10)], 1, 2)    #print long line
+            self.drawObj.line([(x+7,y+12), (x+7,y+14)], 1, 2)   #print exclamation
         logging.info('Ethernet status icon "%s" drawn.' %status)
 
     '''def drawEthernet(self, x=1, y=1, status='ok'):
