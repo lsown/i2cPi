@@ -214,7 +214,7 @@ class OledDisplay:
             logging.info('drawEthernet: invalid status parameter - status must be "ok" or "error".')
             return
         if status == 'error':
-            self.drawObj.line([(7,1), (7,12)], 0, 4)    #excavate interior
+            self.drawObj.line([(7,1), (7,14)], 0, 4)    #excavate interior
             self.drawObj.line([(7,1), (7,10)], 1, 2)    #print long line
             self.drawObj.line([(7,12), (7,14)], 1, 2)   #print exclamation
 
