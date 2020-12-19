@@ -97,7 +97,7 @@ class OledDisplay:
             self.drawObj.text((self.oled.width//2 - font_width//2, self.oled.height//2 + 3), text, font=self.font, fill=255)
 
     def drawCheckText(self, text, column = 1, row = 1, xCheck=2, yCheck=2, xText=18, yText=2):
-        '''Draws check box size of 11 + 5 pxl spacers + WORD'''
+        '''Draws box size of 11 + 5 pxl spacers + word size (18,11)'''
         if column == 1:
             pass
         elif column == 2:
@@ -122,11 +122,34 @@ class OledDisplay:
         self.drawCheckText('EDS', 2, 2)
         self.drawCheckText('WD', 3, 2)
 
+    def drawBoxSymbol(self, symbol='happy', column=1, row=1, xCheck=2, yCheck=2):
+        '''xCheck & yCheck position are based on drawCheckText square position. Position of symbols is relative to top right edge of this box'''
+        self.drawObj.rectangle([(xCheck+1,yCheck+1), (xCheck+10, yCheck+10)], fill=0, outline=0, width = 0) #wipe inside of box just in case
+        if symbol == 'exclamation':
+            self.drawObj.line([(7,4), (7, 9)], 1, 2)    #top line
+            self.drawObj.line([(7,4), (7, 9)], 1, 2)    #bottom dot
+        if symbol == 'x':
+            self.drawObj.line([(5,10), (10,4)], 1,2)    #upward slash
+            self.drawObj.line([(4,4), (10,10)], 1,2) #downward slash
+        if symbol == 'check':
+            self.drawObj.line([(10,4), (7,10)], 1,2)   #downtick
+            self.drawObj.line([(4,7), (7,10)], 1,2) #uptick
+        if (symbol == 'unhappy' or symbol == 'happy' or symbol == 'unsure'):
+            self.drawObj.ellipse([(1,1), (14, 14)], fill=None,width=1)
+            self.drawObj.line([(5,5), (5,6)], 1,2)
+            self.drawObj.line([(9,5), (9,6)], 1,2)
+            if symbol == 'unhappy':
+                self.drawObj.arc([(5,8), (10,11)], 200,340, 1,1)
+            if symbol == 'happy':
+                self.drawObj.arc([(5,8), (10,11)], 0, 180, 1,1)
+            else:
+                self.drawObj.line([(5,9), (10,9)], 1,1)
+
     def drawWifi(self, x=0, y=2, status='ok'):
         '''Draws wifi symbol. If status error, cuts it out and adds exclamation point.'''
         '''x,y positioned @ (3,2) centers in a 0x16 box, add (16,16) to (3,2).'''
         if status == 'error' or status =='ok':
-            self.drawObj.rectangle([(x,y), (x+12, y+12)], 0, 0, 1)  #black out area
+            self.drawObj.rectangle([(x,y), (x+12, y+12)], 0, 0, 1)  #black out area and inside
             #wifi symbol
             self.drawObj.arc([(x, y), (16+x, 8+y)], 200, 340, 1, 1)    #top arc
             self.drawObj.arc([(x, y+4), (16+x, 16+y)], 230, 310, 1, 1)   #mid arc
@@ -179,6 +202,23 @@ class OledDisplay:
             self.drawObj.line([(x+12,y+0),(x+12,y+8)], 1,2) #exclamation line
             self.drawObj.line([(x+12,y+11),(x+12,y+12)], 1,2)   #xclamation point
         logging.info('Ethernet status icon "%s" drawn.' %status)
+
+    def drawEthernet2(self, x=1, y=1, status='ok'):
+        if status == 'error' or status =='ok':
+            self.drawObj.rectangle([(x,y), (x+13, x+13)], 0, 0, 1) #draw outer rectangle
+            self.drawObj.polygon([(x+2,y+2), (x+2,y+9), (x+4,y+9), (x+4,y+11), (x+9,y+11), (x+9,y+9), (x+11,y+9), (x+11,y+2)], 0, 1)  #draw inside
+            #self.drawObj.polygon([(3,3), (3,10), (5,10), (5,12), (10,12), (10,10), (12,10), (12,3)], 0, 1)  #draw inside
+
+        else:
+            logging.info('drawEthernet: invalid status parameter - status must be "ok" or "error".')
+            return
+        if status == 'error':
+            self.drawObj.line([(7,1), (7,12)], 0, 4)    #excavate interior
+            self.drawObj.line([(7,1), (7,10)], 1, 2)    #print long line
+            self.drawObj.line([(7,12), (7,14)], 1, 2)   #print exclamation
+
+    def drawMockConnectivity(self):
+        self.drawEthernet2()
 
     def drawPanel(self):
         self.drawBluetooth(x=108)    #24 + 2
