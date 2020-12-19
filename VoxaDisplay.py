@@ -205,7 +205,8 @@ class OledDisplay:
 
     def drawEthernet2(self, x=1, y=1, status='ok'):
         if status == 'error' or status =='ok':
-            self.drawObj.rectangle([(x,y), (x+13, x+13)], 0, 0, 1) #draw outer rectangle
+            self.drawObj.rectangle([(x,y), (x+13, y+12)], 0, 0, 1)  #black out area 
+            self.drawObj.rectangle([(x,y), (x+13, x+13)], 0, 1, 1) #draw outer rectangle
             self.drawObj.polygon([(x+2,y+2), (x+2,y+9), (x+4,y+9), (x+4,y+11), (x+9,y+11), (x+9,y+9), (x+11,y+9), (x+11,y+2)], 0, 1)  #draw inside
             #self.drawObj.polygon([(3,3), (3,10), (5,10), (5,12), (10,12), (10,10), (12,10), (12,3)], 0, 1)  #draw inside
 
