@@ -164,9 +164,8 @@ class OledDisplay:
             self.drawObj.line([(x+8, y+2), (x+8, y+7)], 1, 3)   #draw straight line for exclamation point
         logging.info('Wifi status icon "%s" drawn.' %status)
 
+    
     '''def drawWifi(self, x=0, y=2, status='ok'):
-        '''Draws wifi symbol. If status error, cuts it out and adds exclamation point.'''
-        '''x,y positioned @ (3,2) centers in a 0x16 box, add (16,16) to (3,2).'''
         if status == 'error' or status =='ok':
             self.drawObj.rectangle([(x,y), (x+12, y+12)], 0, 0, 1)  #black out area and inside
             #wifi symbol
