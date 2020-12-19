@@ -165,6 +165,29 @@ class OledDisplay:
         logging.info('Wifi status icon "%s" drawn.' %status)
 
     def drawBluetooth(self, x=2, y=1, status='ok'):
+        '''Default offset to fit into a 16 x 16 pixel'''
+        if status == 'error' or status =='ok':
+            self.drawObj.line([(x+6,y+1), (x+6,y+13)], 1, 1)    #draw vertical line
+            self.drawObj.line([(x+6,y+1), (x+10,y+5)], 1, 1)     #draw -45 degree line top
+            self.drawObj.line([(x+10,y+5), (x+2,y+9)], 1, 1)     #draw +45 degree mid top cross
+            self.drawObj.line([(x+2,y+5), (x+10,y+9)], 1, 1)     #draw -45 degree mid bot cross
+            self.drawObj.line([(x+6,y+13), (x+10,y+9)], 1, 1)    #draw +45 degree line bot
+        else:
+            logging.info('drawBluetooth: invalid status parameter - status must be "ok" or "error".')
+            return
+        if status == 'error':
+            self.drawObj.line([(x+12,y+0),(x+12,y+9)], 1,2)
+            self.drawObj.line([(x+12,y+11),(x+12,y+13)], 1,2)
+        logging.info('Bluetooth status icon "%s" drawn.' %status)
+        '''#old version with a circle box and x in right corner
+        self.drawObj.line([(x+4,y+12), (x+8,y+8)], 0, 1)    #erase bottom line
+        self.drawObj.arc([(x+3,y+6), (x+11,y+14)],0,360,1,1)   #draw arc
+        self.drawObj.line([(x+4,y+7), (x+10,y+13)],1,1)        #draw -45 degree cross line
+        self.drawObj.line([(x+10,y+7), (x+4,y+13)],1,1)        #draw +45 degree cross line
+        logging.info('Drew error variant of bluetooth.')'''
+
+    def drawBluetooth2(self, x=2, y=1, status='ok'):
+        '''Default offset to fit into a 16 x 16 pixel'''
         if status == 'error' or status =='ok':
             self.drawObj.line([(x+4,y+0), (x+4,y+12)], 1, 1)    #draw vertical line
             self.drawObj.line([(x+4,y+0), (x+8,y+4)], 1, 1)     #draw -45 degree line top
@@ -188,6 +211,23 @@ class OledDisplay:
     def drawEthernet(self, x=1, y=1, status='ok'):
         if status == 'error' or status =='ok':
             self.drawObj.rectangle([(x,y), (x+13, y+12)], 0, 0, 1)  #black out area 
+            self.drawObj.rectangle([(x,y), (x+13, x+13)], 0, 1, 1) #draw outer rectangle
+            self.drawObj.polygon([(x+2,y+2), (x+2,y+9), (x+4,y+9), (x+4,y+11), (x+9,y+11), (x+9,y+9), (x+11,y+9), (x+11,y+2)], 0, 1)  #draw inside
+            #self.drawObj.polygon([(3,3), (3,10), (5,10), (5,12), (10,12), (10,10), (12,10), (12,3)], 0, 1)  #draw inside
+
+        else:
+            logging.info('drawEthernet: invalid status parameter - status must be "ok" or "error".')
+            return
+        if status == 'error':
+            self.drawObj.line([(x+6,y), (x+6,y+13)], 0, 4)    #excavate interior
+            self.drawObj.line([(x+6,y), (x+6,y+9)], 1, 2)    #print long line
+            self.drawObj.line([(x+6,y+11), (x+6,y+13)], 1, 2)   #print exclamation
+        logging.info('Ethernet status icon "%s" drawn.' %status)
+
+    def drawEthernetAlternate(self, x=1, y=1, status='ok'):
+        '''Deprecated symbol, but kept for historical purposes'''
+        if status == 'error' or status =='ok':
+            self.drawObj.rectangle([(x,y), (x+13, y+12)], 0, 0, 1)  #black out area 
             #drawing out ethernet icon
             self.drawObj.rectangle([(x+0,y+0), (x+10, y+12)], fill=0, outline=1, width=1)   #outside ethernet
             self.drawObj.polygon(
@@ -203,23 +243,13 @@ class OledDisplay:
             self.drawObj.line([(x+12,y+11),(x+12,y+12)], 1,2)   #xclamation point
         logging.info('Ethernet status icon "%s" drawn.' %status)
 
-    def drawEthernet2(self, x=1, y=1, status='ok'):
-        if status == 'error' or status =='ok':
-            self.drawObj.rectangle([(x,y), (x+13, y+12)], 0, 0, 1)  #black out area 
-            self.drawObj.rectangle([(x,y), (x+13, x+13)], 0, 1, 1) #draw outer rectangle
-            self.drawObj.polygon([(x+2,y+2), (x+2,y+9), (x+4,y+9), (x+4,y+11), (x+9,y+11), (x+9,y+9), (x+11,y+9), (x+11,y+2)], 0, 1)  #draw inside
-            #self.drawObj.polygon([(3,3), (3,10), (5,10), (5,12), (10,12), (10,10), (12,10), (12,3)], 0, 1)  #draw inside
-
-        else:
-            logging.info('drawEthernet: invalid status parameter - status must be "ok" or "error".')
-            return
-        if status == 'error':
-            self.drawObj.line([(7,1), (7,14)], 0, 4)    #excavate interior
-            self.drawObj.line([(7,1), (7,10)], 1, 2)    #print long line
-            self.drawObj.line([(7,12), (7,14)], 1, 2)   #print exclamation
-
     def drawMockConnectivity(self):
-        self.drawEthernet2()
+        self.drawEthernet()
+        self.drawEthernet(x=16, status='error')
+        self.drawWifi()
+        self.drawWifi(status='error')
+        self.drawBluetooth()
+        self.drawBluetooth(status='error')
 
     def drawPanel(self):
         self.drawBluetooth(x=108)    #24 + 2
